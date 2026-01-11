@@ -2,6 +2,27 @@
 
 All notable changes to X-UI-Lite will be documented in this file.
 
+## [2.5.0] - 2026-01-11
+
+### 🚀 Major Improvements
+
+- **100% Accurate Traffic Statistics**: Re-implemented the traffic counting algorithm using Linux Kernel `iptables` counters. This bypasses the limitations of log parsing and provides bit-perfect traffic tracking directly from the network layer.
+- **Atomic Database Updates**: Traffic usage is now updated using atomic SQL operations, preventing race conditions and ensuring data integrity.
+- **Automatic Quota Enforcement**: The new traffic manager automatically disables inbound nodes that exceed their traffic quota in real-time.
+
+### ✨ New Features & UI Enhancements
+
+- **Simplified UI**: Cleaned up the XHTTP mode display text for a more professional look.
+- **Automated Firewall Management**: The traffic manager automatically handles `iptables` rule creation and synchronization for all inbound nodes.
+- **Robust Persistence**: Traffic counters now survive system reboots and service restarts gracefully.
+
+### 🧹 Codebase Cleanup
+
+- **Removed Redundant Scripts**: Deleted legacy installation and deployment scripts, consolidating logic into the main `install.sh`.
+- **Project Structure Optimization**: Cleaned up temporary build files and updated `.gitignore` for a cleaner repository.
+
+---
+
 ## [2.0.0] - 2026-01-11
 
 ### 🚀 Major Changes

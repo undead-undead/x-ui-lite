@@ -352,9 +352,8 @@ export const AddInboundModal = () => {
                                     <label className="text-sm font-bold text-gray-600 w-24 text-right shrink-0">{t('inbound.modal.xhttp_mode')}:</label>
                                     <div className="flex-1 flex items-center gap-2">
                                         <span className="px-2 py-1 bg-green-50 text-green-700 border border-green-200 rounded text-xs font-bold">
-                                            Intelligent Adaptive / 智能自适应
+                                            {t('inbound.modal.xhttp_mode_auto')}
                                         </span>
-                                        <span className="text-xs text-gray-400 font-medium">({t('inbound.modal.xhttp_mode_auto')})</span>
                                     </div>
                                 </div>
 
