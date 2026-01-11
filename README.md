@@ -5,7 +5,7 @@ A high-performance, minimalist X-UI panel powered by **xray-lite**.
 <div align="center">
 
 [![Build and Release](https://github.com/undead-undead/x-ui-rs/actions/workflows/release.yml/badge.svg)](https://github.com/undead-undead/x-ui-rs/actions/workflows/release.yml)
-![Memory](https://img.shields.io/badge/RAM-~50MB-green)
+![Memory](https://img.shields.io/badge/RAM-%3C%2020MB-green)
 ![Bilingual](https://img.shields.io/badge/Language-ZH/EN-blue)
 
 [**One-Click Install**](#-installation) | [**Features**](#-features) | [**Supporting Project**](#-sponsorship)
@@ -27,9 +27,9 @@ bash <(curl -Ls https://raw.githubusercontent.com/undead-undead/x-ui-lite-v2/mai
 ## ✨ Features
 
 - **Ultra High Performance**: Powered by **xray-lite**, a pure Rust implementation of VLESS+Reality.
-  - Backend: Rust (Axum + SQLx) - ~50MB RAM
-  - Core: xray-lite (Pure Rust) - ~10MB RAM
-  - Total system footprint: ~60MB RAM
+  - Backend: Rust (Axum + SQLx) - ~13.1MB RAM
+  - Core: xray-lite (Pure Rust) - ~5.7MB RAM
+  - Total system footprint: ~18.8MB RAM
 - **Bilingual Support**: Complete Chinese (Simplified) and English support for both Installer and Web UI.
 - **Secure**: Built-in JWT authentication with token freshness validation.
 - **Reality Validation**: Built-in Reality target domain reachability check to ensure connectivity.
@@ -47,7 +47,7 @@ bash <(curl -Ls https://raw.githubusercontent.com/undead-undead/x-ui-lite-v2/mai
 ### Why xray-lite?
 
 - 🚀 **Pure Rust**: No Go runtime, zero GC overhead
-- 🪶 **Lightweight**: ~1.5MB binary, ~10MB memory
+- 🪶 **Lightweight**: ~1.5MB binary, ~5.7MB memory
 - 🔒 **Secure**: Built-in anti-probing with strict SNI validation
 - ⚡ **Fast**: Raw VLESS over H2 for minimum latency
 
