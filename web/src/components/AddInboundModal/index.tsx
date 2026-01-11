@@ -310,10 +310,14 @@ export const AddInboundModal = () => {
                                 className="flex-1 border border-gray-200 rounded-md px-3 py-2 text-sm font-mono outline-none bg-white"
                             />
                             <button
-                                onClick={() => form.setUuid(generateUUID())}
+                                onClick={() => {
+                                    const newUuid = generateUUID();
+                                    console.log('Force Generating UUID v2.1.1:', newUuid);
+                                    form.setUuid(newUuid);
+                                }}
                                 className="px-4 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 transition-colors"
                             >
-                                {t('inbound.modal.generate')}
+                                [v2.1.1] {t('inbound.modal.generate')}
                             </button>
                         </div>
 

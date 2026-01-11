@@ -1,11 +1,10 @@
 #!/bin/bash
 set -e
 
-echo "🧹 Cleaning previous builds..."
+echo "🧹 Cleaning previous builds and caches..."
 rm -rf release
 rm -rf web/dist
-# 不要删除 target 目录，太浪费时间，只需 touch 一下 main.rs 触发重编译即可
-# rm -rf backend/target
+rm -rf web/node_modules/.vite # Clear Vite cache
 touch backend/src/main.rs
 
 echo "📦 Building Frontend (Forcing new build)..."
