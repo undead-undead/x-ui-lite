@@ -1,55 +1,58 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to X-UI-Lite will be documented in this file.
 
-## [1.1.88] - 2026-01-07
+## [2.0.0] - 2026-01-11
 
-### 🔒 Security Fixes
+### 🚀 Major Changes
 
-#### Critical Fixes
-- **Fixed Mutex Poisoning Vulnerability** - Replaced `unwrap()` with proper error handling in monitor lock operations to prevent service crashes
-- **Optimized Regex Compilation** - Username validation regex now compiles only once using `LazyLock`, improving performance by 48-100x
-- **Added Log Rotation** - Implemented daily log rotation with `tracing-appender` to prevent disk space exhaustion
+**Switched from Xray-Core to xray-lite**
 
-#### Details
-- `backend/src/handlers/system.rs`: Proper error handling for monitor locks
-- `backend/src/services/system_service.rs`: Mutex lock error handling in stop/start Xray functions
-- `backend/src/utils/validation.rs`: Static regex compilation using `LazyLock`
-- `backend/src/main.rs`: Daily log rotation with 7-day retention
-- `backend/Cargo.toml`: Added `tracing-appender` dependency
-- `scripts/cleanup-logs.sh`: Log cleanup script for automated maintenance
+This is a complete rewrite of the core proxy engine, replacing the official Go-based Xray-Core with pure Rust xray-lite implementation.
 
-### 📚 Documentation
+### ✨ New Features
 
-- **Added LICENSE** - MIT License with additional terms protecting sponsor links
-- **Updated README** - Added fork policy and license terms
-- **Added Security Fixes Report** - Detailed documentation of all security improvements
+- **Pure Rust Core**: xray-lite is written entirely in Rust, providing better performance and lower memory usage
+- **Ultra-Low Memory**: Total system footprint reduced to ~60MB (Backend 50MB + xray-lite 10MB)
+- **Zero GC Overhead**: No Go runtime, no garbage collection pauses
+- **Built-in Anti-Probing**: Strict SNI validation prevents active server detection
+- **Raw VLESS over H2**: Minimum latency with raw pipe transport
 
-### 🎨 UI Improvements
+### 🔧 Technical Changes
 
-- **Increased Table Header Font Size** - Improved readability of inbound table headers (12px → 13px)
-- **Fixed Traffic Stats Layout** - Changed traffic stats from vertical to horizontal layout
-- **Reverted Button Heights** - Restored padding-based button heights for better visual consistency
+- **Configuration Simplified**: Removed API, Stats, and Policy configurations (not needed for xray-lite)
+- **Traffic Statistics Disabled**: xray-lite doesn't provide gRPC API for statistics
+- **Version Detection**: Updated to support both `--version` and `-version` flags
+- **Download Source**: Changed from XTLS/Xray-core to undead-undead/xray-lite
 
-### 🐛 Bug Fixes
+### 📝 Configuration Format
 
-- **Fixed System Uptime** - Changed from system uptime to application uptime for accurate runtime display
-- **Fixed Memory Stats** - Now uses `free -b` command for accurate memory and swap statistics matching system output
+xray-lite uses a simplified configuration format:
+- No `api` section
+- No `stats` section
+- No `policy` section
+- Only core inbound/outbound/routing configuration
 
-### 🔧 Backend Improvements
+### 🔄 Migration Notes
 
-- Added proper error messages for Mutex poisoning scenarios
-- Improved performance for username validation (48-100x faster)
-- Implemented automatic log file rotation
-- Enhanced memory and swap statistics accuracy
+When upgrading from v1.x to v2.x:
 
-### 📦 Dependencies
+1. Your existing inbound configurations will be automatically converted
+2. Traffic statistics will no longer update (limitation of xray-lite)
+3. All other panel features remain the same
 
-- Added: `tracing-appender@0.2` for log rotation
+### ⚠️ Breaking Changes
+
+- Traffic quota enforcement still works but traffic counters won't increase (API limitation)
+- If you need traffic statistics, please continue using v1.x with Xray-Core
+
+### 🙏 Credits
+
+- [xray-lite](https://github.com/undead-undead/xray-lite) - Pure Rust VLESS+Reality implementation
+- [Xray-core](https://github.com/XTLS/Xray-core) - Original Reality protocol design
 
 ---
 
-## [1.1.87] - 2026-01-06
+## [1.1.88] - Previous Version
 
-### Previous releases...
-
+See [RELEASE_NOTES_v1.1.88.md](./RELEASE_NOTES_v1.1.88.md) for details about the previous version.
