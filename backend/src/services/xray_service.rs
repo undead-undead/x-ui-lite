@@ -5,6 +5,7 @@ use crate::services::system_service::{self, SharedMonitor};
 use axum::async_trait;
 use sqlx::SqlitePool;
 use std::env;
+use serde_json::{json, Value};
 
 #[async_trait]
 pub trait XrayService {
@@ -36,71 +37,104 @@ pub async fn apply_config(pool: &SqlitePool, monitor: SharedMonitor) -> crate::e
     let mut inbound_configs = Vec::new();
 
     for inbound in inbounds {
-        let clients_json = inbound
-            .settings
-            .as_ref()
-            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+        // --- 1. Clients & Settings ---
+        let clients_raw = inbound.settings.as_ref()
+            .and_then(|s| serde_json::from_str::<Value>(s).ok())
             .and_then(|v| v.get("clients").cloned())
-            .unwrap_or_else(|| serde_json::json!([]));
+            .unwrap_or_else(|| json!([]));
+        
+        // Clean up clients (ensure only ID is present if it's VLESS)
+        let mut clients = Vec::new();
+        if let Some(arr) = clients_raw.as_array() {
+            for c in arr {
+                let mut client = json!({});
+                if let Some(id) = c.get("id").or_else(|| c.get("password")) {
+                    client["id"] = id.clone();
+                }
+                if let Some(email) = c.get("email") {
+                    client["email"] = email.clone();
+                }
+                clients.push(client);
+            }
+        }
 
-        let sniffing_json = inbound
-            .sniffing
-            .as_ref()
-            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
-            .unwrap_or_else(|| serde_json::json!({ "enabled": false, "destOverride": ["tls", "http"] }));
+        let sniffing_json = inbound.sniffing.as_ref()
+            .and_then(|s| serde_json::from_str::<Value>(s).ok())
+            .unwrap_or_else(|| json!({ "enabled": false, "destOverride": ["tls", "http"] }));
 
-        let settings = serde_json::json!({
-            "clients": clients_json,
+        let settings = json!({
+            "clients": clients,
             "decryption": "none",
             "sniffing": sniffing_json
         });
 
-        let mut stream_settings_json = inbound
-            .stream_settings
-            .as_ref()
-            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok());
+        // --- 2. Stream Settings ---
+        let stream_settings_raw = inbound.stream_settings.as_ref()
+            .and_then(|s| serde_json::from_str::<Value>(s).ok())
+            .unwrap_or_else(|| json!({ "network": "tcp", "security": "none" }));
+        
+        let mut ss_obj = stream_settings_raw.as_object().cloned().unwrap_or_default();
 
-        if let Some(ref mut ss) = stream_settings_json {
-            if let Some(ss_obj) = ss.as_object_mut() {
-                if ss_obj.get("network").and_then(|n| n.as_str()) == Some("xhttp") {
-                    ss_obj.insert("network".to_string(), serde_json::json!("tcp"));
-                }
+        // Normalize network
+        let network = ss_obj.get("network").and_then(|n| n.as_str()).unwrap_or("tcp");
+        let safe_network = if network == "xhttp" { "tcp" } else { network };
+        ss_obj.insert("network".to_string(), json!(safe_network));
 
-                if let Some(reality) = ss_obj.get_mut("realitySettings") {
-                    if let Some(reality_obj) = reality.as_object_mut() {
-                        if reality_obj.get("serverNames").is_none() {
-                            let names = reality_obj.get("serverName")
-                                .and_then(|v| v.as_str())
-                                .map(|s| if s.is_empty() { vec![] } else { vec![s.to_string()] })
-                                .unwrap_or_default();
-                            reality_obj.insert("serverNames".to_string(), serde_json::json!(names));
-                        }
-                        if reality_obj.get("shortIds").is_none() {
-                            let ids = reality_obj.get("shortId")
-                                .and_then(|v| v.as_str())
-                                .map(|s| if s.is_empty() { vec![] } else { vec![s.to_string()] })
-                                .unwrap_or_default();
-                            reality_obj.insert("shortIds".to_string(), serde_json::json!(ids));
-                        }
-                        if reality_obj.get("fingerprint").is_none() {
-                            reality_obj.insert("fingerprint".to_string(), serde_json::json!("chrome"));
-                        }
-                        // Clean up
-                        reality_obj.remove("serverName");
-                        reality_obj.remove("shortId");
-                    }
-                }
+        // Reality Normalization (Extremely strict for xray-lite)
+        if ss_obj.get("security").and_then(|s| s.as_str()) == Some("reality") {
+            if let Some(rs_val) = ss_obj.get("realitySettings") {
+                let mut rs_new = json!({});
+                
+                // Only take what xray-lite supports
+                rs_new["dest"] = rs_val.get("dest").cloned().unwrap_or(json!("www.microsoft.com:443"));
+                rs_new["privateKey"] = rs_val.get("privateKey").cloned().or_else(|| rs_val.get("private_key").cloned()).unwrap_or(json!(""));
+                rs_new["publicKey"] = rs_val.get("publicKey").cloned().or_else(|| rs_val.get("public_key").cloned()).unwrap_or(Value::Null);
+                rs_new["fingerprint"] = rs_val.get("fingerprint").cloned().unwrap_or(json!("chrome"));
 
-                if let Some(xhttp) = ss_obj.get_mut("xhttpSettings") {
-                    if let Some(xhttp_obj) = xhttp.as_object_mut() {
-                        if xhttp_obj.get("mode").and_then(|m| m.as_str()) == Some("packet-up") {
-                            xhttp_obj.insert("mode".to_string(), serde_json::json!("auto"));
-                        }
-                    }
-                }
+                // serverNames (Array required)
+                let sn = rs_val.get("serverNames").or_else(|| rs_val.get("serverName"));
+                rs_new["serverNames"] = if let Some(sn_val) = sn {
+                    if sn_val.is_array() { sn_val.clone() }
+                    else if let Some(s) = sn_val.as_str() { if s.is_empty() { json!([]) } else { json!([s]) } }
+                    else { json!([]) }
+                } else { json!([]) };
+
+                // shortIds (Array required)
+                let si = rs_val.get("shortIds").or_else(|| rs_val.get("shortId"));
+                rs_new["shortIds"] = if let Some(si_val) = si {
+                    if si_val.is_array() { si_val.clone() }
+                    else if let Some(s) = si_val.as_str() { if s.is_empty() { json!([]) } else { json!([s]) } }
+                    else { json!([]) }
+                } else { json!([]) };
+
+                ss_obj.insert("realitySettings".to_string(), rs_new);
             }
         }
 
+        // XHTTP Normalization
+        if let Some(xh_val) = ss_obj.get("xhttpSettings") {
+            let mut xh_new = json!({});
+            let mode = xh_val.get("mode").and_then(|m| m.as_str()).unwrap_or("auto");
+            xh_new["mode"] = if mode == "packet-up" { json!("auto") } else { json!(mode) };
+            xh_new["path"] = xh_val.get("path").cloned().unwrap_or(json!("/"));
+            xh_new["host"] = xh_val.get("host").cloned().unwrap_or(json!(""));
+            ss_obj.insert("xhttpSettings".to_string(), xh_new);
+        }
+
+        // Sockopt Normalization
+        let mut sockopt = json!({
+            "tcpFastOpen": true,
+            "tcpNoDelay": true,
+            "acceptProxyProtocol": false
+        });
+        if let Some(so_val) = ss_obj.get("sockopt") {
+            if let Some(b) = so_val.get("tcpFastOpen").and_then(|v| v.as_bool()) { sockopt["tcpFastOpen"] = json!(b); }
+            if let Some(b) = so_val.get("tcpNoDelay").and_then(|v| v.as_bool()) { sockopt["tcpNoDelay"] = json!(b); }
+            if let Some(b) = so_val.get("acceptProxyProtocol").and_then(|v| v.as_bool()) { sockopt["acceptProxyProtocol"] = json!(b); }
+        }
+        ss_obj.insert("sockopt".to_string(), sockopt);
+
+        // --- 3. Assemble Inbound ---
         let listen_addr = inbound.listen.as_ref()
             .map(|s| if s.is_empty() { "0.0.0.0".to_string() } else { s.clone() })
             .unwrap_or_else(|| "0.0.0.0".to_string());
@@ -112,27 +146,24 @@ pub async fn apply_config(pool: &SqlitePool, monitor: SharedMonitor) -> crate::e
             listen: Some(listen_addr),
             allocate: None,
             settings: Some(settings),
-            stream_settings: stream_settings_json,
+            stream_settings: Some(json!(ss_obj)),
             sniffing: None,
         });
     }
 
     config.inbounds = inbound_configs;
-
     config.outbounds.push(OutboundConfig {
         tag: "direct".to_string(),
         protocol: "freedom".to_string(),
         settings: None,
         stream_settings: None,
     });
-
     config.outbounds.push(OutboundConfig {
         tag: "blocked".to_string(),
         protocol: "blackhole".to_string(),
         settings: None,
         stream_settings: None,
     });
-
     config.routing = Some(RoutingConfig {
         domain_strategy: "IPIfNonMatch".to_string(),
         rules: vec![],
@@ -142,30 +173,21 @@ pub async fn apply_config(pool: &SqlitePool, monitor: SharedMonitor) -> crate::e
         crate::errors::ApiError::InternalError(format!("Failed to serialize config: {}", e))
     })?;
 
-    let config_path = env::var("XRAY_CONFIG_PATH").unwrap_or_else(|_| "data/xray.json".to_string());
+    let config_path = env::var("XRAY_CONFIG_PATH").unwrap_or_else(|_| "/etc/x-ui/xray.json".to_string());
 
     if let Some(parent) = std::path::Path::new(&config_path).parent() {
         if !parent.exists() {
-            tokio::fs::create_dir_all(parent).await.map_err(|e| {
-                crate::errors::ApiError::SystemError(format!("Failed to create config directory: {}", e))
-            })?;
+            let _ = std::fs::create_dir_all(parent);
         }
     }
 
-    tokio::fs::write(&config_path, config_json)
-        .await
-        .map_err(|e| {
-            crate::errors::ApiError::SystemError(format!("Failed to write config file: {}", e))
-        })?;
+    tokio::fs::write(&config_path, config_json).await.map_err(|e| {
+        crate::errors::ApiError::SystemError(format!("Failed to write config file: {}", e))
+    })?;
 
     tracing::info!("xray-lite config generated at: {}", config_path);
-
     tokio::spawn(async move {
-        if let Err(e) = system_service::restart_xray(monitor).await {
-            tracing::error!("Background xray-lite restart failed: {:?}", e);
-        } else {
-            tracing::info!("Background xray-lite restart successful");
-        }
+        let _ = system_service::restart_xray(monitor).await;
     });
 
     Ok(())
