@@ -200,9 +200,24 @@ install_xray() {
         return 1
     fi
     
-    # Install the binary
+    # Install the vless-server binary
     mv /tmp/vless-server $XRAY_BIN_PATH
     chmod +x $XRAY_BIN_PATH
+    
+    # Also download and install keygen tool for Reality key generation
+    echo -e "${green}Installing xray-lite keygen tool...${plain}"
+    local keygen_file="keygen-linux-${xray_lite_arch}"
+    local keygen_url="https://github.com/undead-undead/x-ui-lite-v2/releases/download/v2.0.0/${keygen_file}"
+    local keygen_path="$INSTALL_PATH/bin/keygen"
+    
+    wget -N --no-check-certificate -q -O /tmp/keygen $keygen_url
+    if [[ $? -eq 0 ]]; then
+        mv /tmp/keygen $keygen_path
+        chmod +x $keygen_path
+        echo -e "${green}keygen tool installed successfully${plain}"
+    else
+        echo -e "${yellow}Warning: keygen tool not found, using fallback method${plain}"
+    fi
     
     echo -e "${green}xray-lite installed successfully${plain}"
 }
