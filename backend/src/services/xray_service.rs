@@ -1,149 +1,123 @@
-use crate::errors::ApiResult;
-use crate::models::inbound::Inbound;
-use crate::models::xray_config::*;
-use crate::services::system_service;
-use crate::services::system_service::SharedMonitor;
+use crate::models::xray_config::{
+    ApiConfig, InboundConfig, LogConfig, OutboundConfig, RoutingConfig, RoutingRule, XrayConfig,
+};
+use crate::services::system_service::{self, SharedMonitor};
+use axum::async_trait;
 use sqlx::SqlitePool;
 use std::env;
 
-pub async fn apply_config(pool: &SqlitePool, monitor: SharedMonitor) -> ApiResult<()> {
-    let inbounds = sqlx::query_as::<_, Inbound>("SELECT * FROM inbounds WHERE enable = 1")
+#[async_trait]
+pub trait XrayService {
+    async fn generate_config(pool: &SqlitePool) -> crate::errors::ApiResult<XrayConfig>;
+}
+
+pub async fn apply_config(pool: &SqlitePool, monitor: SharedMonitor) -> crate::errors::ApiResult<()> {
+    let inbounds = sqlx::query_as::<_, crate::models::inbound::Inbound>("SELECT * FROM inbounds")
         .fetch_all(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            crate::errors::ApiError::InternalError(format!("Failed to fetch inbounds: {}", e))
+        })?;
 
-    let mut config = XrayConfig::default();
+    let mut config = XrayConfig {
+        log: LogConfig::default(),
+        api: ApiConfig {
+            tag: "api".to_string(),
+            services: vec!["HandlerService".to_string(), "StatsService".to_string()],
+        },
+        dns: None,
+        stats: None,
+        policy: None,
+        inbounds: vec![],
+        outbounds: vec![],
+        routing: None,
+    };
 
-    // Simplified logging for xray-lite
-    config.log.loglevel = "info".to_string();
-    let cwd = env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
-    let log_dir = cwd.join("logs");
-    if !log_dir.exists() {
-        let _ = std::fs::create_dir_all(&log_dir);
-    }
-
-    config.log.access = Some(log_dir.join("access.log").to_string_lossy().to_string());
-    config.log.error = Some(log_dir.join("error.log").to_string_lossy().to_string());
-
-    // xray-lite doesn't need API configuration
-    // Removed API inbound and services
+    let mut inbound_configs = Vec::new();
 
     for inbound in inbounds {
-        let tag = inbound
-            .tag
-            .clone()
-            .unwrap_or_else(|| format!("inbound-{}", inbound.id));
-
-        let allocate = inbound
-            .allocate
-            .as_ref()
-            .and_then(|s| serde_json::from_str(s).ok());
-
-        // xray-lite requires "listen" field to be present
-        let listen = inbound.listen.clone().unwrap_or_else(|| "0.0.0.0".to_string());
-
-        // Handle sniffing: move it into settings for xray-lite compliance
-        // And merge existing settings
-        let mut settings_json = inbound
+        let clients_json = inbound
             .settings
             .as_ref()
             .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
-            .unwrap_or(serde_json::json!({}));
-        
+            .and_then(|v| v.get("clients").cloned())
+            .unwrap_or_else(|| serde_json::json!([]));
+
         let sniffing_json = inbound
             .sniffing
             .as_ref()
-            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok());
-            
-        if let Some(obj) = settings_json.as_object_mut() {
-            // Ensure clients field exists (required by xray-lite)
-            if !obj.contains_key("clients") {
-                obj.insert("clients".to_string(), serde_json::json!([]));
-            }
-            // Ensure decryption field exists
-            if !obj.contains_key("decryption") {
-                obj.insert("decryption".to_string(), serde_json::json!("none"));
-            }
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+            .unwrap_or_else(|| serde_json::json!({ "enabled": false, "destOverride": ["tls", "http"] }));
 
-            if let Some(sniffing) = sniffing_json {
-                obj.insert("sniffing".to_string(), sniffing);
-            }
-        }
+        let settings = serde_json::json!({
+            "clients": clients_json,
+            "decryption": "none",
+            "sniffing": sniffing_json
+        });
 
-        // Handle stream_settings: fix compatibility issues for xray-lite
         let mut stream_settings_json = inbound
             .stream_settings
             .as_ref()
             .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok());
 
         if let Some(ref mut ss) = stream_settings_json {
-            // Fix network: xhttp -> tcp (xray-lite doesn't have xhttp enum variant)
-            if let Some(network) = ss.get("network").and_then(|n| n.as_str()) {
-                if network == "xhttp" {
-                    if let Some(ss_obj) = ss.as_object_mut() {
-                        ss_obj.insert("network".to_string(), serde_json::json!("tcp"));
+            if let Some(ss_obj) = ss.as_object_mut() {
+                if ss_obj.get("network").and_then(|n| n.as_str()) == Some("xhttp") {
+                    ss_obj.insert("network".to_string(), serde_json::json!("tcp"));
+                }
+
+                if let Some(reality) = ss_obj.get_mut("realitySettings") {
+                    if let Some(reality_obj) = reality.as_object_mut() {
+                        if reality_obj.get("serverNames").is_none() {
+                            let names = reality_obj.get("serverName")
+                                .and_then(|v| v.as_str())
+                                .map(|s| if s.is_empty() { vec![] } else { vec![s.to_string()] })
+                                .unwrap_or_default();
+                            reality_obj.insert("serverNames".to_string(), serde_json::json!(names));
+                        }
+                        if reality_obj.get("shortIds").is_none() {
+                            let ids = reality_obj.get("shortId")
+                                .and_then(|v| v.as_str())
+                                .map(|s| if s.is_empty() { vec![] } else { vec![s.to_string()] })
+                                .unwrap_or_default();
+                            reality_obj.insert("shortIds".to_string(), serde_json::json!(ids));
+                        }
+                        if reality_obj.get("fingerprint").is_none() {
+                            reality_obj.insert("fingerprint".to_string(), serde_json::json!("chrome"));
+                        }
+                        // Clean up
+                        reality_obj.remove("serverName");
+                        reality_obj.remove("shortId");
                     }
                 }
-            }
 
-            // Fix realitySettings: serverName -> serverNames
-            if let Some(reality) = ss.get_mut("realitySettings") {
-                if let Some(reality_obj) = reality.as_object_mut() {
-                    // Check if serverNames is missing but serverName exists
-                    if reality_obj.get("serverNames").is_none() {
-                        if let Some(server_name) = reality_obj.get("serverName") {
-                            // Convert single serverName to array of serverNames
-                            if let Some(name) = server_name.as_str() {
-                                if !name.is_empty() {
-                                    reality_obj.insert("serverNames".to_string(), serde_json::json!([name]));
-                                } else {
-                                    reality_obj.insert("serverNames".to_string(), serde_json::json!([]));
-                                }
-                            }
+                if let Some(xhttp) = ss_obj.get_mut("xhttpSettings") {
+                    if let Some(xhttp_obj) = xhttp.as_object_mut() {
+                        if xhttp_obj.get("mode").and_then(|m| m.as_str()) == Some("packet-up") {
+                            xhttp_obj.insert("mode".to_string(), serde_json::json!("auto"));
                         }
-                    } else if let Some(names) = reality_obj.get_mut("serverNames").and_then(|n| n.as_array_mut()) {
-                        // Filter empty strings from existing serverNames array
-                        names.retain(|n| n.as_str().map_or(false, |s| !s.is_empty()));
-                    }
-                    
-                    // Also check shortIds
-                    if reality_obj.get("shortIds").is_none() {
-                         if let Some(short_id) = reality_obj.get("shortId") {
-                            if let Some(id) = short_id.as_str() {
-                                if !id.is_empty() {
-                                    reality_obj.insert("shortIds".to_string(), serde_json::json!([id]));
-                                } else {
-                                    reality_obj.insert("shortIds".to_string(), serde_json::json!([]));
-                                }
-                            }
-                        } else {
-                            // Ensure shortIds exists as empty array if missing
-                            reality_obj.insert("shortIds".to_string(), serde_json::json!([]));
-                        }
-                    } else if let Some(ids) = reality_obj.get_mut("shortIds").and_then(|i| i.as_array_mut()) {
-                        // Filter empty strings from existing shortIds array
-                        ids.retain(|i| i.as_str().map_or(false, |s| !s.is_empty()));
                     }
                 }
             }
         }
 
-        let inbound_config = InboundConfig {
-            tag,
+        let listen_addr = inbound.listen.as_ref()
+            .map(|s| if s.is_empty() { "0.0.0.0".to_string() } else { s.clone() })
+            .unwrap_or_else(|| "0.0.0.0".to_string());
+
+        inbound_configs.push(InboundConfig {
+            tag: inbound.tag.clone().unwrap_or_else(|| format!("inbound-{}", inbound.id)),
             port: inbound.port,
             protocol: inbound.protocol.clone(),
-            listen: Some(listen), // Ensure listen is set
-            allocate,
-            settings: Some(settings_json), // Settings now includes sniffing
+            listen: Some(listen_addr),
+            allocate: None,
+            settings: Some(settings),
             stream_settings: stream_settings_json,
-            sniffing: None, // Remove top-level sniffing (it's now in settings)
-        };
-
-
-        config.inbounds.push(inbound_config);
+            sniffing: None,
+        });
     }
 
-    // xray-lite doesn't need stats and policy
-    // Removed stats and policy configuration
+    config.inbounds = inbound_configs;
 
     config.outbounds.push(OutboundConfig {
         tag: "direct".to_string(),
@@ -159,7 +133,6 @@ pub async fn apply_config(pool: &SqlitePool, monitor: SharedMonitor) -> ApiResul
         stream_settings: None,
     });
 
-    // Simplified routing - no need for API routing
     config.routing = Some(RoutingConfig {
         domain_strategy: "IPIfNonMatch".to_string(),
         rules: vec![],
@@ -169,16 +142,12 @@ pub async fn apply_config(pool: &SqlitePool, monitor: SharedMonitor) -> ApiResul
         crate::errors::ApiError::InternalError(format!("Failed to serialize config: {}", e))
     })?;
 
-    let config_path =
-        env::var("XRAY_CONFIG_PATH").unwrap_or_else(|_| "/etc/x-ui/xray.json".to_string());
+    let config_path = env::var("XRAY_CONFIG_PATH").unwrap_or_else(|_| "data/xray.json".to_string());
 
     if let Some(parent) = std::path::Path::new(&config_path).parent() {
         if !parent.exists() {
             tokio::fs::create_dir_all(parent).await.map_err(|e| {
-                crate::errors::ApiError::SystemError(format!(
-                    "Failed to create config directory: {}",
-                    e
-                ))
+                crate::errors::ApiError::SystemError(format!("Failed to create config directory: {}", e))
             })?;
         }
     }
