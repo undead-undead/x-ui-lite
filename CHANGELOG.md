@@ -2,6 +2,17 @@
 
 All notable changes to X-UI-Lite will be documented in this file.
 
+## [2.5.8] - 2026-01-12
+
+### ⚡ Performance Optimization (Core v0.2.77)
+
+- **4x Throughput Increase**: Upgraded core data buffering from 16KB to 64KB, significantly improving transfer speeds on high-bandwidth connections (e.g., 4K/8K video streaming).
+- **Zero-Copy Architecture**: Rewrote the XHTTP transport layer to use `BytesMut` for efficient memory management, eliminating unnecessary data copying and reducing CPU usage.
+- **H2 Window Tuning**: Aligned HTTP/2 initial window size with industry standards (512KB) for better flow control.
+- **Universal Static Build**: continues to use the new Musl static compilation for 100% Linux compatibility.
+
+---
+
 ## [2.5.7] - 2026-01-11
 
 ### 🛡️ Universal Compatibility (Static Release)

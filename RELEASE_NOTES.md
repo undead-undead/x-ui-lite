@@ -1,11 +1,14 @@
-# X-UI-Lite v2.5.7 - Universal Static Release
+# X-UI-Lite v2.5.8 - High Performance Update
 
-This version provides the stability of v2.5.2 with the added benefit of **Universal Static Binaries**.
+This release integrates the latest **xray-lite v0.2.77** core, bringing massive performance improvements.
 
-### 🌟 What's New?
-- **Fixed "GLIBC not found"**: We have switched to a full Musl static build for the Panel, Xray, and Keygen. This fixes the issue where the software would fail to start on older VPS systems (like Debian 10).
-- **v2.5.2 Logic Core**: We have returned to the stable connection logic you preferred, maintaining the matching behavior between the panel and the `keygen` tool.
-- **Portability**: One package now works perfectly across different VPS providers and OS versions.
+### 🚀 Performance Boost
+- **4x Throughput**: Increased internal buffer size from 16KB to 64KB. This solves the speed throttling issue on high-speed connections (e.g. YouTube 4K/8K).
+- **Zero-Copy**: Implemented `BytesMut` for XHTTP transport to reduce CPU usage and memory copying overhead.
+- **H2 Optimization**: Tuned HTTP/2 window sizes to match standard Xray-core behavior.
+
+### 🛡️ Universal Compatibility
+- Still fully static (Musl). Runs on any Linux distro out of the box.
 
 ### 🛠 Installation & Upgrade
 
@@ -13,4 +16,4 @@ This version provides the stability of v2.5.2 with the added benefit of **Univer
 bash <(curl -Ls https://raw.githubusercontent.com/undead-undead/x-ui-lite/main/install.sh)
 ```
 
-**Full Changelog**: [CHANGELOG.md](https://github.com/undead-undead/x-ui-lite/blob/v2.5.7/CHANGELOG.md)
+**Full Changelog**: [CHANGELOG.md](https://github.com/undead-undead/x-ui-lite/blob/v2.5.8/CHANGELOG.md)
