@@ -93,21 +93,35 @@ pub async fn apply_config(pool: &SqlitePool, monitor: SharedMonitor) -> ApiResul
                         if let Some(server_name) = reality_obj.get("serverName") {
                             // Convert single serverName to array of serverNames
                             if let Some(name) = server_name.as_str() {
-                                reality_obj.insert("serverNames".to_string(), serde_json::json!([name]));
+                                if !name.is_empty() {
+                                    reality_obj.insert("serverNames".to_string(), serde_json::json!([name]));
+                                } else {
+                                    reality_obj.insert("serverNames".to_string(), serde_json::json!([]));
+                                }
                             }
                         }
+                    } else if let Some(names) = reality_obj.get_mut("serverNames").and_then(|n| n.as_array_mut()) {
+                        // Filter empty strings from existing serverNames array
+                        names.retain(|n| n.as_str().map_or(false, |s| !s.is_empty()));
                     }
                     
                     // Also check shortIds
                     if reality_obj.get("shortIds").is_none() {
                          if let Some(short_id) = reality_obj.get("shortId") {
                             if let Some(id) = short_id.as_str() {
-                                reality_obj.insert("shortIds".to_string(), serde_json::json!([id]));
+                                if !id.is_empty() {
+                                    reality_obj.insert("shortIds".to_string(), serde_json::json!([id]));
+                                } else {
+                                    reality_obj.insert("shortIds".to_string(), serde_json::json!([]));
+                                }
                             }
                         } else {
                             // Ensure shortIds exists as empty array if missing
                             reality_obj.insert("shortIds".to_string(), serde_json::json!([]));
                         }
+                    } else if let Some(ids) = reality_obj.get_mut("shortIds").and_then(|i| i.as_array_mut()) {
+                        // Filter empty strings from existing shortIds array
+                        ids.retain(|i| i.as_str().map_or(false, |s| !s.is_empty()));
                     }
                 }
             }
