@@ -350,16 +350,12 @@ export const AddInboundModal = () => {
                             <>
                                 <div className="flex items-center gap-3">
                                     <label className="text-sm font-bold text-gray-600 w-24 text-right shrink-0">{t('inbound.modal.xhttp_mode')}:</label>
-                                    <select
-                                        value={form.xhttpMode}
-                                        onChange={(e) => form.setXhttpMode(e.target.value)}
-                                        className="flex-1 border border-gray-200 rounded-md px-3 py-2 text-sm outline-none bg-white"
-                                    >
-                                        <option value="auto">{t('inbound.modal.xhttp_mode_auto')}</option>
-                                        <option value="stream-up">{t('inbound.modal.xhttp_mode_stream')}</option>
-                                        <option value="stream-one">{t('inbound.modal.xhttp_mode_one')}</option>
-                                    </select>
-                                    <span className="text-xs text-gray-500 shrink-0">{t('common.default')}: auto</span>
+                                    <div className="flex-1 flex items-center gap-2">
+                                        <span className="px-2 py-1 bg-green-50 text-green-700 border border-green-200 rounded text-xs font-bold">
+                                            Intelligent Adaptive / 智能自适应
+                                        </span>
+                                        <span className="text-xs text-gray-400 font-medium">({t('inbound.modal.xhttp_mode_auto')})</span>
+                                    </div>
                                 </div>
 
                                 <div className="flex items-center gap-3">
