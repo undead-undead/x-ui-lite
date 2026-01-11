@@ -72,29 +72,38 @@ pub async fn apply_config(pool: &SqlitePool, monitor: SharedMonitor) -> crate::e
             if let Some(rs_val) = ss_obj.get("realitySettings") {
                 let mut rs_new = Map::new();
                 
-                // Only take fields supported by xray-lite source code
-                rs_new.insert("dest".to_string(), rs_val.get("dest").cloned().unwrap_or(json!("www.microsoft.com:443")));
-                rs_new.insert("privateKey".to_string(), rs_val.get("privateKey").cloned().or_else(|| rs_val.get("private_key").cloned()).unwrap_or(json!("")));
-                rs_new.insert("publicKey".to_string(), rs_val.get("publicKey").cloned().or_else(|| rs_val.get("public_key").cloned()).unwrap_or(Value::Null));
-                rs_new.insert("fingerprint".to_string(), rs_val.get("fingerprint").cloned().unwrap_or(json!("chrome")));
+                // Duplication for absolute compatibility with xray-lite's lack of serde rename attributes
+                let dest = rs_val.get("dest").cloned().unwrap_or(json!("www.microsoft.com:443"));
+                let priv_key = rs_val.get("privateKey").cloned().or_else(|| rs_val.get("private_key").cloned()).unwrap_or(json!(""));
+                let pub_key = rs_val.get("publicKey").cloned().or_else(|| rs_val.get("public_key").cloned()).unwrap_or(Value::Null);
+                let fp = rs_val.get("fingerprint").cloned().unwrap_or(json!("chrome"));
 
-                // Force Array for serverNames
-                let sn = rs_val.get("serverNames").or_else(|| rs_val.get("serverName"));
+                rs_new.insert("dest".to_string(), dest);
+                rs_new.insert("privateKey".to_string(), priv_key.clone());
+                rs_new.insert("private_key".to_string(), priv_key); // Standard snake_case
+                rs_new.insert("publicKey".to_string(), pub_key.clone());
+                rs_new.insert("public_key".to_string(), pub_key); // Standard snake_case
+                rs_new.insert("fingerprint".to_string(), fp);
+
+                // serverNames
+                let sn = rs_val.get("serverNames").or_else(|| rs_val.get("serverName")).or_else(|| rs_val.get("server_names"));
                 let server_names = if let Some(sn_val) = sn {
                     if sn_val.is_array() { sn_val.clone() }
                     else if let Some(s) = sn_val.as_str() { if s.is_empty() { json!([]) } else { json!([s]) } }
                     else { json!([]) }
                 } else { json!([]) };
-                rs_new.insert("serverNames".to_string(), server_names);
+                rs_new.insert("serverNames".to_string(), server_names.clone());
+                rs_new.insert("server_names".to_string(), server_names); // Standard snake_case
 
-                // Force Array for shortIds
-                let si = rs_val.get("shortIds").or_else(|| rs_val.get("shortId"));
+                // shortIds
+                let si = rs_val.get("shortIds").or_else(|| rs_val.get("shortId")).or_else(|| rs_val.get("short_ids"));
                 let short_ids = if let Some(si_val) = si {
                     if si_val.is_array() { si_val.clone() }
                     else if let Some(s) = si_val.as_str() { if s.is_empty() { json!([]) } else { json!([s]) } }
                     else { json!([]) }
                 } else { json!([]) };
-                rs_new.insert("shortIds".to_string(), short_ids);
+                rs_new.insert("shortIds".to_string(), short_ids.clone());
+                rs_new.insert("short_ids".to_string(), short_ids); // Standard snake_case
 
                 ss_obj.insert("realitySettings".to_string(), Value::Object(rs_new));
             }
