@@ -60,6 +60,41 @@ pub async fn apply_config(pool: &SqlitePool, monitor: SharedMonitor) -> ApiResul
             }
         }
 
+        // Handle stream_settings: fix compatibility issues for xray-lite
+        let mut stream_settings_json = inbound
+            .stream_settings
+            .as_ref()
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok());
+
+        if let Some(ref mut ss) = stream_settings_json {
+            // Fix realitySettings: serverName -> serverNames
+            if let Some(reality) = ss.get_mut("realitySettings") {
+                if let Some(reality_obj) = reality.as_object_mut() {
+                    // Check if serverNames is missing but serverName exists
+                    if reality_obj.get("serverNames").is_none() {
+                        if let Some(server_name) = reality_obj.get("serverName") {
+                            // Convert single serverName to array of serverNames
+                            if let Some(name) = server_name.as_str() {
+                                reality_obj.insert("serverNames".to_string(), serde_json::json!([name]));
+                            }
+                        }
+                    }
+                    
+                    // Also check shortIds
+                    if reality_obj.get("shortIds").is_none() {
+                         if let Some(short_id) = reality_obj.get("shortId") {
+                            if let Some(id) = short_id.as_str() {
+                                reality_obj.insert("shortIds".to_string(), serde_json::json!([id]));
+                            }
+                        } else {
+                            // Ensure shortIds exists as empty array if missing
+                            reality_obj.insert("shortIds".to_string(), serde_json::json!([]));
+                        }
+                    }
+                }
+            }
+        }
+
         let inbound_config = InboundConfig {
             tag,
             port: inbound.port,
@@ -67,12 +102,10 @@ pub async fn apply_config(pool: &SqlitePool, monitor: SharedMonitor) -> ApiResul
             listen: Some(listen), // Ensure listen is set
             allocate,
             settings: Some(settings_json), // Settings now includes sniffing
-            stream_settings: inbound
-                .stream_settings
-                .as_ref()
-                .and_then(|s| serde_json::from_str(s).ok()),
+            stream_settings: stream_settings_json,
             sniffing: None, // Remove top-level sniffing (it's now in settings)
         };
+
 
         config.inbounds.push(inbound_config);
     }
