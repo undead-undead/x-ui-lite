@@ -14,7 +14,7 @@ pub async fn apply_config(pool: &SqlitePool, monitor: SharedMonitor) -> ApiResul
     let mut config = XrayConfig::default();
 
     // Simplified logging for xray-lite
-    config.log.loglevel = "error".to_string();
+    config.log.loglevel = "info".to_string();
     let cwd = env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
     let log_dir = cwd.join("logs");
     if !log_dir.exists() {
