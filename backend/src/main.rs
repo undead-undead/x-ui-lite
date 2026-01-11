@@ -60,11 +60,17 @@ async fn main() -> anyhow::Result<()> {
         if args.contains(&"--help".to_string()) || args.contains(&"-h".to_string()) {
             println!("X-UI Backend CLI");
             println!("Usage:");
+            println!("  --version, -v                      Show version");
             println!("  --reset, -r                        Reset admin to defaults (admin/admin)");
             println!("  --user, -u <username>              Set admin username");
             println!("  --password, -p <password>          Set admin password");
             println!("  --port <port>                      Update port in .env");
             println!("  --web-root <path>                  Update web root in .env");
+            return Ok(());
+        }
+
+        if args.contains(&"--version".to_string()) || args.contains(&"-v".to_string()) {
+            println!("x-ui-backend v{}", env!("CARGO_PKG_VERSION"));
             return Ok(());
         }
 
