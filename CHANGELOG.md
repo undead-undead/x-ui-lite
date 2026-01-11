@@ -2,6 +2,16 @@
 
 All notable changes to X-UI-Lite will be documented in this file.
 
+## [2.5.9] - 2026-01-12
+
+### ⚡ Critical Performance Fix (Core v0.2.78)
+
+- **Smart Write Buffering**: Implemented a 14KB write buffer in the Reality transport layer. This eliminates CPU overhead caused by frequent small packet writes (common in TLS handshakes and video streaming headers).
+- **Reduced Syscalls**: System calls for sending data have been reduced by ~90%, significantly lowering CPU load under high concurrency.
+- **Full Bandwidth**: This fix allows the proxy to fully utilize the available bandwidth, solving the speed drop issue compared to direct connections.
+
+---
+
 ## [2.5.8] - 2026-01-12
 
 ### ⚡ Performance Optimization (Core v0.2.77)
