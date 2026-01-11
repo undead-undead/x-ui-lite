@@ -56,8 +56,13 @@ export const AddInboundModal = () => {
                 useDialogStore.getState().showAlert(t('inbound.modal.uuid_empty'), t('common.error') || 'Error');
                 return;
             }
+            // Strict UUID length check for xray-lite validation
+            if (form.uuid.trim().length !== 36) {
+                useDialogStore.getState().showAlert("UUID length must be 36 characters (xray-lite strict check)", t('common.error') || 'Error');
+                return;
+            }
             settings.clients = [{
-                id: form.uuid,
+                id: form.uuid.trim(),
                 ...(form.flow && form.protocol === 'vless' && { flow: form.flow }),
                 ...(form.level && { level: Number(form.level) }),
                 ...(form.email && { email: form.email }),
