@@ -179,7 +179,7 @@ install_xray() {
 
     i18n "xray_installing"
     
-    # Download xray-lite instead of xray-core
+    # Download xray-lite from x-ui-lite-v2 release
     local xray_lite_arch=""
     if [[ $arch == "amd64" ]]; then
         xray_lite_arch="x86_64"
@@ -188,36 +188,16 @@ install_xray() {
     fi
     
     local xray_lite_file="vless-server-linux-${xray_lite_arch}"
-    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/latest/download/${xray_lite_file}"
+    # Download from x-ui-lite-v2 release instead of xray-lite repo
+    local xray_lite_url="https://github.com/undead-undead/x-ui-lite-v2/releases/download/v2.0.0/${xray_lite_file}"
     
     # Try downloading xray-lite
     wget -N --no-check-certificate -q -O /tmp/vless-server $xray_lite_url
     if [[ $? -ne 0 ]]; then
-        # Fallback: try building from source if download fails
-        echo -e "${yellow}xray-lite binary not found, attempting to build from source...${plain}"
-        
-        # Check if Rust is installed
-        if ! command -v cargo &> /dev/null; then
-            echo -e "${red}Rust is not installed. Please install Rust first: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh${plain}"
-            i18n "xray_fail"
-            return 1
-        fi
-        
-        # Clone and build xray-lite
-        cd /tmp
-        rm -rf xray-lite
-        git clone https://github.com/undead-undead/xray-lite.git
-        cd xray-lite
-        cargo build --release --bin vless-server
-        
-        if [[ $? -ne 0 ]]; then
-            i18n "xray_fail"
-            return 1
-        fi
-        
-        cp target/release/vless-server /tmp/vless-server
-        cd /
-        rm -rf /tmp/xray-lite
+        echo -e "${red}Failed to download xray-lite binary${plain}"
+        echo -e "${yellow}xray-lite binary not available for architecture: ${xray_lite_arch}${plain}"
+        i18n "xray_fail"
+        return 1
     fi
     
     # Install the binary
