@@ -179,7 +179,7 @@ install_xray() {
 
     i18n "xray_installing"
     
-    # Download xray-lite from x-ui-lite-v2 release
+    # Download xray-lite from x-ui-lite release
     local xray_lite_arch=""
     if [[ $arch == "amd64" ]]; then
         xray_lite_arch="x86_64"
@@ -188,7 +188,7 @@ install_xray() {
     fi
     
     local xray_lite_file="vless-server-linux-${xray_lite_arch}"
-    # Download from x-ui-lite-v2 release instead of xray-lite repo
+    # Download from x-ui-lite release instead of xray-lite repo
     local xray_lite_url="https://github.com/undead-undead/x-ui-lite/releases/download/v2.5.0/${xray_lite_file}"
     
     # Try downloading xray-lite
@@ -257,7 +257,7 @@ install_x_ui() {
     if [[ ! -f x-ui-linux-${arch}.tar.gz || ! -s x-ui-linux-${arch}.tar.gz ]]; then
         echo -e "${red}Failed to download X-UI v2.0.0${plain}"
         echo -e "${red}Please check if the v2.0.0 release exists at:${plain}"
-        echo -e "${red}https://github.com/undead-undead/x-ui-lite-v2/releases/tag/v2.0.0${plain}"
+        echo -e "${red}https://github.com/undead-undead/x-ui-lite/releases/tag/v2.0.0${plain}"
         i18n "xui_fail"
         return 1
     fi

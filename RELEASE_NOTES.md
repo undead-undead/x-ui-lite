@@ -25,7 +25,7 @@ We have completely replaced the unreliable log-parsing method with a robust **Li
 To install or upgrade to v2.5.0, run the following command:
 
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/undead-undead/x-ui-lite-v2/master/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/undead-undead/x-ui-lite/main/install.sh)
 ```
 
 ### ⚠️ Note for Users
@@ -33,4 +33,4 @@ The new traffic tracking requires `iptables` support in the kernel. Most Linux d
 
 ---
 
-**Full Changelog**: [CHANGELOG.md](https://github.com/undead-undead/x-ui-lite-v2/blob/v2.5.0/CHANGELOG.md)
+**Full Changelog**: [CHANGELOG.md](https://github.com/undead-undead/x-ui-lite/blob/v2.5.0/CHANGELOG.md)
