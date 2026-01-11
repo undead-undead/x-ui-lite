@@ -173,7 +173,7 @@ pub async fn apply_config(pool: &SqlitePool, monitor: SharedMonitor) -> crate::e
         crate::errors::ApiError::InternalError(format!("Failed to serialize config: {}", e))
     })?;
 
-    let config_path = env::var("XRAY_CONFIG_PATH").unwrap_or_else(|_| "/etc/x-ui/xray.json".to_string());
+    let config_path = env::var("XRAY_CONFIG_PATH").unwrap_or_else(|_| "/usr/local/x-ui/data/xray.json".to_string());
 
     if let Some(parent) = std::path::Path::new(&config_path).parent() {
         if !parent.exists() {
