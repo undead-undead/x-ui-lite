@@ -129,6 +129,7 @@ pub async fn apply_config(pool: &SqlitePool, monitor: SharedMonitor) -> crate::e
 
         // 3. Build Inbound (ONLY fields supported by xray-lite)
         let mut inbound_map = Map::new();
+        inbound_map.insert("tag".to_string(), json!(inbound.tag.as_ref().filter(|s| !s.is_empty()).cloned().unwrap_or_else(|| format!("inbound-{}", inbound.id))));
         inbound_map.insert("port".to_string(), json!(inbound.port));
         inbound_map.insert("protocol".to_string(), json!(inbound.protocol.to_lowercase()));
         inbound_map.insert("listen".to_string(), json!(inbound.listen.as_ref().filter(|s| !s.is_empty()).unwrap_or(&"0.0.0.0".to_string())));
