@@ -16,10 +16,8 @@ A high-performance, minimalist X-UI panel powered by **xray-lite**.
 
 ## ⚡ Quick Start
 
-Run the following command to install/update:
-
 ```bash
-bash <(curl -Ls https://raw.githubusercontent.com/undead-undead/x-ui-lite-v2/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/undead-undead/x-ui-lite-v2/main/install.sh)
 ```
 
 ---
