@@ -32,19 +32,10 @@ bash <(curl -Ls https://raw.githubusercontent.com/undead-undead/x-ui-lite-v2/mai
   - Total system footprint: ~18.8MB RAM
 - **Bilingual Support**: Complete Chinese (Simplified) and English support for both Installer and Web UI.
 - **Secure**: Built-in JWT authentication with token freshness validation.
+- **Universal XHTTP**: One-click XHTTP deployment with 100% compatibility for PC and iOS.
 - **Reality Validation**: Built-in Reality target domain reachability check to ensure connectivity.
 - **BBR Support**: One-click BBR enablement.
 - **Built-in Management**: Simple `x-ui` command to manage your panel from the terminal.
-
----
-
-## 📱 Client Compatibility / 客户端兼容性
-
-- **PC/Windows/Mac (v2rayN/Core)**: Fully Compatible with Reality & XHTTP modes.
-- **Mobile (iOS/Shadowrocket)**: ⚠️ Compatible with **Reality (TCP)** ONLY. XHTTP (gRPC) mode is currently incompatible.
-
-- **PC/Windows/Mac (v2rayN/Core)**: 完美兼容 Reality 和 XHTTP 模式。
-- **移动端 (iOS/小火箭)**: ⚠️ 仅兼容 **Reality (TCP)** 模式。XHTTP (gRPC) 模式暂不兼容。
 
 ---
 
@@ -52,14 +43,15 @@ bash <(curl -Ls https://raw.githubusercontent.com/undead-undead/x-ui-lite-v2/mai
 
 - **Backend**: Rust (Axum framework) + SQLite (SQLx)
 - **Frontend**: React + TypeScript + Vite
-- **Core**: [xray-lite](https://github.com/undead-undead/xray-lite) - Pure Rust VLESS+Reality implementation
+- **Core**: [xray-lite](https://github.com/undead-undead/xray-lite) - Pure Rust VLESS+Reality+XHTTP implementation
 
-### Why xray-lite?
+### Why xray-lite UAE? (Universal Adaptive Engine)
 
-- 🚀 **Pure Rust**: No Go runtime, zero GC overhead
-- 🪶 **Lightweight**: ~1.5MB binary, ~5.7MB memory
-- 🔒 **Secure**: Built-in anti-probing with strict SNI validation
-- ⚡ **Fast**: Raw VLESS over H2 for minimum latency
+The core has been upgraded with the **Universal Adaptive Engine**:
+- 🛡️ **Zero-Config Adaptation**: Automatically detects client type. Same configuration works for **PC (Xray-core)** and **Mobile (Shadowrocket/Stash)**.
+- 📱 **Mobile Split-Stream**: Industry-leading XHTTP session pairing for 100% stability on iOS.
+- 🕵️ **Silent Dynamic Padding**: Transparent randomized HTTP/2 header padding (64-512 bytes) to defeat GFW/DPI.
+- 🚀 **Pure Rust Efficiency**: No Go runtime, zero GC overhead, sub-10MB memory usage.
 
 ---
 
@@ -93,4 +85,3 @@ You may add your own sponsor links **alongside** the original ones, but **cannot
 **Violation of these terms may result in license termination and DMCA takedown.**
 
 See [LICENSE](./LICENSE) for full details.
-
