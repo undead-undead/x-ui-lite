@@ -70,6 +70,11 @@ export const inboundApi = {
         const response = await apiClient.post<ApiResponse<void>>('/inbound/reset-traffic', { id });
         return response.data;
     },
+
+    resetAllTraffic: async (): Promise<ApiResponse<void>> => {
+        const response = await apiClient.post<ApiResponse<void>>('/inbound/reset-all');
+        return response.data;
+    },
 };
 
 

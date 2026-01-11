@@ -2,6 +2,16 @@
 
 All notable changes to X-UI-Lite will be documented in this file.
 
+## [2.5.2] - 2026-01-11
+
+### 🚀 Bug Fixes & Features
+
+- **Global Traffic Reset**: The "Reset" button in the node list header now resets traffic for ALL inbounds in the database, not just for the current UI session.
+- **Accurate Traffic Display**: The total traffic summary now shows absolute sums from the database, matching the real state of all nodes.
+- **Improved Monitoring**: Refined the traffic collector logic to be more resilient and fix a bug where node tags were sometimes extracted incorrectly from `iptables` logs.
+
+---
+
 ## [2.5.1] - 2026-01-11
 
 ### 🚀 Bug Fixes & Optimization

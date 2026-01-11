@@ -110,7 +110,7 @@ XRAY_BIN_PATH="$INSTALL_PATH/bin/xray"
 ENV_FILE="$INSTALL_PATH/.env"
 SERVICE_FILE="/etc/systemd/system/x-ui.service"
 
-RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.5.1/x-ui-linux-${arch}.tar.gz"
+RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.5.2/x-ui-linux-${arch}.tar.gz"
 
 install_dependencies() {
     i18n "install_deps"
@@ -189,7 +189,7 @@ install_xray() {
     
     local xray_lite_file="vless-server-linux-${xray_lite_arch}"
     # Download from x-ui-lite release instead of xray-lite repo
-    local xray_lite_url="https://github.com/undead-undead/x-ui-lite/releases/download/v2.5.1/${xray_lite_file}"
+    local xray_lite_url="https://github.com/undead-undead/x-ui-lite/releases/download/v2.5.2/${xray_lite_file}"
     
     # Try downloading xray-lite
     wget -N --no-check-certificate -q -O /tmp/vless-server $xray_lite_url
@@ -207,7 +207,7 @@ install_xray() {
     # Also download and install keygen tool for Reality key generation
     echo -e "${green}Installing xray-lite keygen tool...${plain}"
     local keygen_file="keygen-linux-${xray_lite_arch}"
-    local keygen_url="https://github.com/undead-undead/x-ui-lite/releases/download/v2.5.1/${keygen_file}"
+    local keygen_url="https://github.com/undead-undead/x-ui-lite/releases/download/v2.5.2/${keygen_file}"
     local keygen_path="$INSTALL_PATH/bin/keygen"
     
     wget -N --no-check-certificate -q -O /tmp/keygen $keygen_url

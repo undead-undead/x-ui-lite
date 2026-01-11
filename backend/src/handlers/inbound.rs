@@ -90,3 +90,11 @@ pub async fn reset_traffic(
     inbound_service::reset_inbound_traffic(&pool, &payload.id).await?;
     Ok(ApiResponse::success_no_data("Traffic reset successfully"))
 }
+
+pub async fn reset_all_traffic(
+    _user: AuthUser,
+    Extension(pool): Extension<SqlitePool>,
+) -> ApiResult<ApiResponse<()>> {
+    inbound_service::reset_all_inbound_traffic(&pool).await?;
+    Ok(ApiResponse::success_no_data("All traffic reset successfully"))
+}

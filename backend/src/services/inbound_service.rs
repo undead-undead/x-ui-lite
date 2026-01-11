@@ -129,3 +129,10 @@ pub async fn reset_inbound_traffic(pool: &SqlitePool, id: &str) -> ApiResult<()>
         .await?;
     Ok(())
 }
+
+pub async fn reset_all_inbound_traffic(pool: &SqlitePool) -> ApiResult<()> {
+    sqlx::query("UPDATE inbounds SET up = 0, down = 0")
+        .execute(pool)
+        .await?;
+    Ok(())
+}

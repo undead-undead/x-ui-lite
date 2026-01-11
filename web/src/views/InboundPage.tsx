@@ -6,6 +6,8 @@ import { Plus, CheckCircle2, XCircle, Database } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useModalStore } from '../store/useModalStore';
 import { useBackupModalStore } from '../store/useBackupModalStore';
+import { useDialogStore } from '../store/useDialogStore';
+import { toast } from 'react-hot-toast';
 import { formatTraffic } from '../utils/format';
 import { useDebouncedValue } from '@mantine/hooks';
 import { checkRealityDomain, quickCheckRealityDomainSync, type DomainCheckResult } from '../utils/realityDomainChecker';
@@ -20,15 +22,12 @@ export const InboundPage = () => {
     const openModal = useModalStore((state) => state.openModal);
     const openBackupModal = useBackupModalStore((state) => state.open);
 
+    const resetAllTraffic = useInboundStore((state) => state.resetAllTraffic);
+
     const [searchQuery, setSearchQuery] = useState('');
     const [realityDomain, setRealityDomain] = useState('');
     const [isChecking, setIsChecking] = useState(false);
     const [checkResult, setCheckResult] = useState<DomainCheckResult | null>(null);
-
-    const [trafficBaseline, setTrafficBaseline] = useState<{ upload: number; download: number }>(() => {
-        const saved = localStorage.getItem('traffic_baseline');
-        return saved ? JSON.parse(saved) : { upload: 0, download: 0 };
-    });
 
     const currentTotals = useMemo(() => {
         return inbounds.reduce(
@@ -41,21 +40,21 @@ export const InboundPage = () => {
     }, [inbounds]);
 
     const { totalUpload, totalDownload } = useMemo(() => {
-        const upload = Math.max(0, currentTotals.upload - trafficBaseline.upload);
-        const download = Math.max(0, currentTotals.download - trafficBaseline.download);
         return {
-            totalUpload: formatTraffic(upload),
-            totalDownload: formatTraffic(download),
+            totalUpload: formatTraffic(currentTotals.upload),
+            totalDownload: formatTraffic(currentTotals.download),
         };
-    }, [currentTotals, trafficBaseline]);
+    }, [currentTotals]);
 
     const handleResetTrafficStats = () => {
-        const newBaseline = {
-            upload: currentTotals.upload,
-            download: currentTotals.download,
-        };
-        setTrafficBaseline(newBaseline);
-        localStorage.setItem('traffic_baseline', JSON.stringify(newBaseline));
+        useDialogStore.getState().showConfirm(
+            t('inbound.confirm.reset_msg'),
+            async () => {
+                await resetAllTraffic();
+                toast.success(t('inbound.confirm.reset_success'));
+            },
+            t('inbound.confirm.reset_title')
+        );
     };
 
     useEffect(() => {

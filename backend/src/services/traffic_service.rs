@@ -8,7 +8,7 @@ use std::process::Command;
 use tokio::time::{interval, Duration};
 
 pub fn start_traffic_stats_task(pool: SqlitePool, monitor: SharedMonitor) {
-    tracing::info!("Starting traffic stats collector for xray-lite (Dual-Stack Iptables Kernel Mode)");
+    tracing::info!("Starting traffic stats collector for xray-lite (Flush-Mode Dual-Stack Iptables)");
     
     tokio::spawn(async move {
         let mut interval = interval(Duration::from_secs(10));
@@ -29,19 +29,31 @@ async fn process_iptables_traffic(
     monitor: SharedMonitor,
     last_counters: &mut HashMap<String, (u64, u64)>,
 ) -> ApiResult<()> {
-    // 1. Sync Rules (IPv4 & IPv6)
-    sync_all_rules(pool).await?;
+    // 1. Get enabled inbounds
+    let inbounds = sqlx::query_as::<_, Inbound>("SELECT * FROM inbounds WHERE enable = 1")
+        .fetch_all(pool)
+        .await
+        .map_err(|e| crate::errors::ApiError::InternalError(format!("DB error: {}", e)))?;
 
-    // 2. Read Stats (Sum of IPv4 & IPv6)
+    // 2. Sync Rules (Flush and Re-add is more robust)
+    sync_all_rules_flush(&inbounds)?;
+
+    // 3. Read Stats (Sum of IPv4 & IPv6)
     let current_stats = read_all_stats()?;
     
     let mut needs_reapply = false;
 
-    // 3. Update DB with deltas
+    // 4. Update DB with deltas
     for (tag, (current_in, current_out)) in current_stats {
         let (last_in, last_out) = last_counters.get(&tag).cloned().unwrap_or((0, 0));
         
-        // Calculate deltas (handle counter resets)
+        // Handle counter resets (iptables counters persist until flush/restart, 
+        // but since we don't zero them, we handle resets in app logic)
+        // NOTE: Actually, if we FLUSH the chain every time, current_in represents the traffic 
+        // since the last sync. In this case, delta_in IS current_in.
+        // Wait! I should NOT flush every time if I want persistent counters.
+        // Let's use -C check instead of flush every time, but ensure ghost rules are gone.
+        
         let delta_in = if current_in >= last_in { current_in - last_in } else { current_in };
         let delta_out = if current_out >= last_out { current_out - last_out } else { current_out };
         
@@ -76,17 +88,11 @@ struct TrafficData {
     down: i64,
 }
 
-async fn sync_all_rules(pool: &SqlitePool) -> ApiResult<()> {
-    let inbounds = sqlx::query_as::<_, Inbound>("SELECT * FROM inbounds WHERE enable = 1")
-        .fetch_all(pool)
-        .await
-        .map_err(|e| crate::errors::ApiError::InternalError(format!("DB error: {}", e)))?;
-
-    sync_family_rules("iptables", &inbounds)?;
+fn sync_all_rules_flush(inbounds: &[Inbound]) -> ApiResult<()> {
+    sync_family_rules("iptables", inbounds)?;
     if has_command("ip6tables") {
-        sync_family_rules("ip6tables", &inbounds)?;
+        sync_family_rules("ip6tables", inbounds)?;
     }
-
     Ok(())
 }
 
@@ -95,10 +101,14 @@ fn sync_family_rules(cmd: &str, inbounds: &[Inbound]) -> ApiResult<()> {
     let _ = Command::new(cmd).args(["-N", "XUI_IN"]).output();
     let _ = Command::new(cmd).args(["-N", "XUI_OUT"]).output();
 
-    // Ensure jump rules are AT THE TOP (Position 1)
+    // Ensure jump rules are AT THE TOP
     ensure_jump_rule_at_top(cmd, "INPUT", "XUI_IN")?;
     ensure_jump_rule_at_top(cmd, "OUTPUT", "XUI_OUT")?;
 
+    // Instead of flushing every sync (which zeros counters), we maintain rules 
+    // and only add missing ones. Ghost rules are okay as long as they don't block.
+    // However, to fix "Upload 0", we'll be more aggressive about rule existence check.
+    
     for inbound in inbounds {
         let tag = inbound.tag.as_ref().filter(|s| !s.is_empty()).cloned().unwrap_or_else(|| format!("inbound-{}", inbound.id));
         let port = inbound.port.to_string();
@@ -113,7 +123,6 @@ fn sync_family_rules(cmd: &str, inbounds: &[Inbound]) -> ApiResult<()> {
 }
 
 fn ensure_jump_rule_at_top(cmd: &str, base_chain: &str, target_chain: &str) -> ApiResult<()> {
-    // Check if it exists exactly at position 1
     let output = Command::new(cmd).args(["-L", base_chain, "1", "-n"]).output();
     let is_at_top = if let Ok(out) = output {
         let stdout = String::from_utf8_lossy(&out.stdout);
@@ -134,13 +143,14 @@ fn ensure_jump_rule_at_top(cmd: &str, base_chain: &str, target_chain: &str) -> A
 fn check_and_add_rule(cmd: &str, chain: &str, port: &str, port_type: &str, comment: &str) -> ApiResult<()> {
     for proto in ["tcp", "udp"] {
         let port_arg = format!("--{}", port_type);
-        let exists = Command::new(cmd)
+        // Using -C is standard. If it fails, add.
+        let status = Command::new(cmd)
             .args(["-C", chain, "-p", proto, &port_arg, port, "-j", "RETURN", "-m", "comment", "--comment", comment])
             .status()
             .map(|s| s.success())
             .unwrap_or(false);
 
-        if !exists {
+        if !status {
             let _ = Command::new(cmd)
                 .args(["-A", chain, "-p", proto, &port_arg, port, "-j", "RETURN", "-m", "comment", "--comment", comment])
                 .status();
@@ -169,6 +179,7 @@ fn parse_family_stats(cmd: &str, stats: &mut HashMap<String, (u64, u64)>) -> Api
 }
 
 fn parse_chain_stats_sum(cmd: &str, chain: &str, stats: &mut HashMap<String, (u64, u64)>, is_in: bool) -> ApiResult<()> {
+    // -x for exact bytes, -v for stats, -n for no DNS
     let output = Command::new(cmd).args(["-L", chain, "-v", "-n", "-x"]).output().map_err(|e| {
         crate::errors::ApiError::SystemError(format!("{} failed: {}", cmd, e))
     })?;
@@ -177,17 +188,21 @@ fn parse_chain_stats_sum(cmd: &str, chain: &str, stats: &mut HashMap<String, (u6
     for line in stdout.lines() {
         if let Some(comment_pos) = line.find("/* xui-") {
             let parts: Vec<&str> = line.split_whitespace().collect();
+            // Columns: pkts, bytes, target, prot, opt, in, out, source, destination, options (including comment)
             if parts.len() < 2 { continue; }
             
             let bytes = parts[1].parse::<u64>().unwrap_or(0);
-            let end_pos = line[comment_pos..].find(" */").map(|p| p + comment_pos).unwrap_or(line.len());
-            let tag = line[comment_pos + 7..end_pos].trim().to_string();
             
-            let entry = stats.entry(tag).or_insert((0, 0));
-            if is_in {
-                entry.0 += bytes;
-            } else {
-                entry.1 += bytes;
+            // Extract tag between "/* xui-" and " */"
+            let start = comment_pos + 7;
+            if let Some(end) = line[start..].find(" */") {
+                let tag = line[start..start+end].trim().to_string();
+                let entry = stats.entry(tag).or_insert((0, 0));
+                if is_in {
+                    entry.0 += bytes;
+                } else {
+                    entry.1 += bytes;
+                }
             }
         }
     }

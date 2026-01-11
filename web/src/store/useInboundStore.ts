@@ -12,6 +12,7 @@ interface InboundStore {
     deleteInbound: (id: string) => Promise<void>;
     toggleEnable: (id: string) => Promise<void>;
     resetTraffic: (id: string) => Promise<void>;
+    resetAllTraffic: () => Promise<void>;
     setInbounds: (data: Inbound[]) => void;
 }
 
@@ -91,6 +92,19 @@ export const useInboundStore = create<InboundStore>((set, get) => ({
                     inbounds: state.inbounds.map((item) =>
                         item.id === id ? { ...item, up: 0, down: 0 } : item
                     )
+                }));
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    },
+
+    resetAllTraffic: async () => {
+        try {
+            const res = await inboundApi.resetAllTraffic();
+            if (res.success) {
+                set((state) => ({
+                    inbounds: state.inbounds.map((item) => ({ ...item, up: 0, down: 0 }))
                 }));
             }
         } catch (e) {

@@ -1,21 +1,19 @@
-# X-UI-Lite v2.5.1 - Dual-Stack Traffic & Accuracy Fix
+# X-UI-Lite v2.5.2 - Global Traffic Reset & Accuracy
 
-This release addresses the issues found in v2.5.0, specifically improving traffic tracking accuracy for IPv6 and system-wide speed display.
+This release focuses on functional correctness for traffic management and global statistics.
 
-### 🌟 Fixes & Improvements
+### 🌟 Key Improvements
 
-#### 🌐 Dual-Stack Traffic Tracking
-Added full `ip6tables` support. Previously, IPv6 traffic was not counted in the node list, leading to "0 upload/download" for some users. 
+#### 🔄 Global Traffic Reset
+The "Reset" button in the **Inbound List Header** now performs a **Real Database Reset** for all nodes. This allows you to clear all traffic metrics across your entire panel with a single click.
 
-#### 🚀 Accurate System Speed
-Filtered out loopback and virtual interfaces (docker, veth, br-) from the dashboard speed display. This ensures that internal traffic no longer inflates the reported network speed or causes "upload = download" confusion.
+#### 📊 Absolute Sum Statistics
+The total upload and download figures in the header now show the **exact sum** of all nodes from the database. We have removed the session-based "baseline" logic to provide a more transparent and intuitive view of your total data usage.
 
-#### 🛡️ Priority Rule Enforcement
-The traffic counting rules are now forcefully moved to the **top** of the Linux kernel chains (INPUT/OUTPUT 1). This prevents other firewall rules or "Established Connection" optimizations from bypassing our counters.
+#### 🛡️ Resilient Collector
+Found and fixed a subtle bug in the traffic parsing logic that could sometimes fail to extract node tags correctly. This ensures more reliable "Upload/Download" metrics in the node list.
 
 ### 🛠 Installation & Upgrade
-
-To install or upgrade to v2.5.1, run:
 
 ```bash
 bash <(curl -Ls https://raw.githubusercontent.com/undead-undead/x-ui-lite/main/install.sh)
@@ -26,4 +24,4 @@ The new traffic tracking requires `iptables` support in the kernel. Most Linux d
 
 ---
 
-**Full Changelog**: [CHANGELOG.md](https://github.com/undead-undead/x-ui-lite/blob/v2.5.1/CHANGELOG.md)
+**Full Changelog**: [CHANGELOG.md](https://github.com/undead-undead/x-ui-lite/blob/v2.5.2/CHANGELOG.md)

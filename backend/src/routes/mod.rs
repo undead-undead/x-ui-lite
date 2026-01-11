@@ -50,6 +50,7 @@ pub fn create_router(pool: SqlitePool, monitor: SharedMonitor) -> Router {
         .route("/update", post(handlers::inbound::update_inbound))
         .route("/del", post(handlers::inbound::del_inbound_post))
         .route("/reset-traffic", post(handlers::inbound::reset_traffic))
+        .route("/reset-all", post(handlers::inbound::reset_all_traffic))
         .route("/check-reality", post(handlers::inbound::check_reality))
         .route_layer(middleware::from_fn_with_state(
             pool.clone(),
