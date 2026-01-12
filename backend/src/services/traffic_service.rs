@@ -101,6 +101,10 @@ fn sync_family_rules(cmd: &str, inbounds: &[Inbound]) -> ApiResult<()> {
     let _ = Command::new(cmd).args(["-N", "XUI_IN"]).output();
     let _ = Command::new(cmd).args(["-N", "XUI_OUT"]).output();
 
+    // Flush chains to remove ghost rules from deleted nodes
+    let _ = Command::new(cmd).args(["-F", "XUI_IN"]).output();
+    let _ = Command::new(cmd).args(["-F", "XUI_OUT"]).output();
+
     // Ensure jump rules are AT THE TOP
     ensure_jump_rule_at_top(cmd, "INPUT", "XUI_IN")?;
     ensure_jump_rule_at_top(cmd, "OUTPUT", "XUI_OUT")?;

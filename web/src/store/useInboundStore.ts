@@ -31,7 +31,7 @@ export const useInboundStore = create<InboundStore>((set, get) => ({
                     streamSettings: typeof item.streamSettings === 'string' ? JSON.parse(item.streamSettings) : item.streamSettings,
                     sniffing: typeof item.sniffing === 'string' ? JSON.parse(item.sniffing) : item.sniffing,
                     allocate: typeof item.allocate === 'string' ? JSON.parse(item.allocate) : item.allocate,
-                }));
+                })).sort((a, b) => Number(a.id) - Number(b.id));
                 set({ inbounds: processed });
             }
         } finally {
