@@ -12,12 +12,12 @@ pub fn start_traffic_stats_task(pool: SqlitePool, monitor: SharedMonitor) {
     
     tokio::spawn(async move {
         let mut interval = interval(Duration::from_secs(10));
-        let mut last_counters: HashMap<String, (u64, u64)> = HashMap::new();
+        // Removed last_counters as we use flush-mode (stateless delta)
 
         loop {
             interval.tick().await;
             
-            if let Err(e) = process_iptables_traffic(&pool, monitor.clone(), &mut last_counters).await {
+            if let Err(e) = process_iptables_traffic(&pool, monitor.clone()).await {
                 tracing::error!("Error processing dual-stack iptables traffic: {}", e);
             }
         }
@@ -27,7 +27,6 @@ pub fn start_traffic_stats_task(pool: SqlitePool, monitor: SharedMonitor) {
 async fn process_iptables_traffic(
     pool: &SqlitePool,
     monitor: SharedMonitor,
-    last_counters: &mut HashMap<String, (u64, u64)>,
 ) -> ApiResult<()> {
     // 1. Get enabled inbounds
     let inbounds = sqlx::query_as::<_, Inbound>("SELECT * FROM inbounds WHERE enable = 1")
@@ -35,35 +34,23 @@ async fn process_iptables_traffic(
         .await
         .map_err(|e| crate::errors::ApiError::InternalError(format!("DB error: {}", e)))?;
 
-    // 2. Sync Rules (Flush and Re-add is more robust)
-    sync_all_rules_flush(&inbounds)?;
+    // 2. Read Stats FIRST (Before flushing counters!)
+    // If chains don't exist (first run), this returns error, which we treat as 0 traffic.
+    let current_stats = read_all_stats().unwrap_or_default();
 
-    // 3. Read Stats (Sum of IPv4 & IPv6)
-    let current_stats = read_all_stats()?;
+    // 3. Sync Rules (Flush and Re-add)
+    // This resets iptables counters to zero for the next period.
+    sync_all_rules_flush(&inbounds)?;
     
     let mut needs_reapply = false;
 
-    // 4. Update DB with deltas
-    for (tag, (current_in, current_out)) in current_stats {
-        let (last_in, last_out) = last_counters.get(&tag).cloned().unwrap_or((0, 0));
-        
-        // Handle counter resets (iptables counters persist until flush/restart, 
-        // but since we don't zero them, we handle resets in app logic)
-        // NOTE: Actually, if we FLUSH the chain every time, current_in represents the traffic 
-        // since the last sync. In this case, delta_in IS current_in.
-        // Wait! I should NOT flush every time if I want persistent counters.
-        // Let's use -C check instead of flush every time, but ensure ghost rules are gone.
-        
-        let delta_in = if current_in >= last_in { current_in - last_in } else { current_in };
-        let delta_out = if current_out >= last_out { current_out - last_out } else { current_out };
-        
-        last_counters.insert(tag.clone(), (current_in, current_out));
-
-        if delta_in > 0 || delta_out > 0 {
+    // 4. Update DB with deltas (current_stats IS the delta since last flush)
+    for (tag, (up, down)) in current_stats {
+        if up > 0 || down > 0 {
             let traffic_data = TrafficData {
                 tag,
-                up: delta_in as i64,   // Client UP = Server IN
-                down: delta_out as i64, // Client DOWN = Server OUT
+                up: up as i64, 
+                down: down as i64,
             };
             
             if let Err(e) = update_db_traffic(pool, &traffic_data, &mut needs_reapply).await {

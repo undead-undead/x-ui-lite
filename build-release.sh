@@ -8,7 +8,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
-VERSION="v2.5.14"
+VERSION="v2.5.15"
 RELEASE_DIR="release"
 
 echo -e "${GREEN}Building X-UI-Lite ${VERSION}...${NC}"
