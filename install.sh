@@ -174,7 +174,6 @@ enable_bbr() {
 install_xray() {
     # Force update: remove existing binary if it exists
     if [[ -f "$XRAY_BIN_PATH" ]]; then
-        echo "Removing existing xray-lite binary to ensure update..."
         rm -f "$XRAY_BIN_PATH"
     fi
 
@@ -207,9 +206,7 @@ install_xray() {
     
     # Keygen binary is no longer needed as key generation is now native in backend
     # but we install it anyway just in case user wants to use cli
-    echo -e "${green}Skipping keygen tool installation (native support active)...${plain}"
-    
-    echo -e "${green}xray-lite installed successfully${plain}"
+    # echo -e "${green}Skipping keygen tool installation (native support active)...${plain}"
 }
 
 install_x_ui() {
@@ -233,11 +230,9 @@ install_x_ui() {
     
     # Use -L to follow redirects from GitHub
     if command -v wget &> /dev/null; then
-        echo "Using wget to download..."
-        wget -L --no-check-certificate -O x-ui-linux-${arch}.tar.gz "$RELEASE_URL" 2>&1
+        wget -L -q --no-check-certificate -O x-ui-linux-${arch}.tar.gz "$RELEASE_URL"
     elif command -v curl &> /dev/null; then
-        echo "Using curl to download..."
-        curl -L -o x-ui-linux-${arch}.tar.gz "$RELEASE_URL" 2>&1
+        curl -fsSL -o x-ui-linux-${arch}.tar.gz "$RELEASE_URL"
     else
         echo -e "${red}Error: Neither wget nor curl is available${plain}"
         return 1
@@ -251,15 +246,13 @@ install_x_ui() {
         i18n "xui_fail"
         return 1
     fi
-    
-    echo "Download successful: $(ls -lh x-ui-linux-${arch}.tar.gz)"
 
     # Clean old dist folders to ensure new version takes effect
     rm -rf $INSTALL_PATH/dist
     rm -rf $INSTALL_PATH/bin/dist
     
     # Extract
-    tar -zxvf x-ui-linux-${arch}.tar.gz -C $INSTALL_PATH
+    tar -zxf x-ui-linux-${arch}.tar.gz -C $INSTALL_PATH
     chmod +x $BIN_PATH
     
     # Install Xray
