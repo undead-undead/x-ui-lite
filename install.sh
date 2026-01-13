@@ -190,7 +190,7 @@ install_xray() {
     
     local xray_lite_file="vless-server-linux-${xray_lite_arch}"
     # Download from x-ui-lite release instead of xray-lite repo
-    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.2.90/${xray_lite_file}"
+    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.2.91/${xray_lite_file}"
     
     # Try downloading xray-lite
     wget -N --no-check-certificate -q -O /tmp/vless-server $xray_lite_url
