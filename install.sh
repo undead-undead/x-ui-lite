@@ -115,10 +115,10 @@ RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.5.1
 install_dependencies() {
     i18n "install_deps"
     if [[ -f /usr/bin/apt ]]; then
-        apt-get update -y -qq >/dev/null 2>&1
-        apt-get install -y -qq curl wget tar unzip >/dev/null 2>&1
+        apt update -y
+        apt install -y curl wget tar unzip
     elif [[ -f /usr/bin/yum ]]; then
-        yum install -y -q curl wget tar unzip >/dev/null 2>&1
+        yum install -y curl wget tar unzip
     fi
 }
 
@@ -163,7 +163,7 @@ enable_bbr() {
     i18n "bbr_enabling"
     echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
     echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
-    sysctl -p >/dev/null 2>&1
+    sysctl -p
     if sysctl net.ipv4.tcp_congestion_control | grep -q bbr; then
         i18n "bbr_on"
     else
@@ -174,6 +174,7 @@ enable_bbr() {
 install_xray() {
     # Force update: remove existing binary if it exists
     if [[ -f "$XRAY_BIN_PATH" ]]; then
+        echo "Removing existing xray-lite binary to ensure update..."
         rm -f "$XRAY_BIN_PATH"
     fi
 
@@ -188,8 +189,8 @@ install_xray() {
     fi
     
     local xray_lite_file="vless-server-linux-${xray_lite_arch}"
-    # Download from x-ui-lite release instead of xray-lite repo
-    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.4.2/${xray_lite_file}"
+    # Download from x-ui-lite release instead of xray-lite repo (Updated to v0.2.100)
+    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.2.100/${xray_lite_file}"
     
     # Try downloading xray-lite
     wget -N --no-check-certificate -q -O /tmp/vless-server $xray_lite_url
@@ -206,7 +207,9 @@ install_xray() {
     
     # Keygen binary is no longer needed as key generation is now native in backend
     # but we install it anyway just in case user wants to use cli
-    # echo -e "${green}Skipping keygen tool installation (native support active)...${plain}"
+    echo -e "${green}Skipping keygen tool installation (native support active)...${plain}"
+    
+    echo -e "${green}xray-lite installed successfully${plain}"
 }
 
 install_x_ui() {
@@ -230,9 +233,11 @@ install_x_ui() {
     
     # Use -L to follow redirects from GitHub
     if command -v wget &> /dev/null; then
-        wget -L -q --no-check-certificate -O x-ui-linux-${arch}.tar.gz "$RELEASE_URL"
+        echo "Using wget to download..."
+        wget -L --no-check-certificate -O x-ui-linux-${arch}.tar.gz "$RELEASE_URL" 2>&1
     elif command -v curl &> /dev/null; then
-        curl -fsSL -o x-ui-linux-${arch}.tar.gz "$RELEASE_URL"
+        echo "Using curl to download..."
+        curl -L -o x-ui-linux-${arch}.tar.gz "$RELEASE_URL" 2>&1
     else
         echo -e "${red}Error: Neither wget nor curl is available${plain}"
         return 1
@@ -246,13 +251,15 @@ install_x_ui() {
         i18n "xui_fail"
         return 1
     fi
+    
+    echo "Download successful: $(ls -lh x-ui-linux-${arch}.tar.gz)"
 
     # Clean old dist folders to ensure new version takes effect
     rm -rf $INSTALL_PATH/dist
     rm -rf $INSTALL_PATH/bin/dist
     
     # Extract
-    tar -zxf x-ui-linux-${arch}.tar.gz -C $INSTALL_PATH
+    tar -zxvf x-ui-linux-${arch}.tar.gz -C $INSTALL_PATH
     chmod +x $BIN_PATH
     
     # Install Xray
