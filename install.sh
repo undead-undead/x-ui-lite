@@ -110,7 +110,7 @@ XRAY_BIN_PATH="$INSTALL_PATH/bin/xray"
 ENV_FILE="$INSTALL_PATH/.env"
 SERVICE_FILE="/etc/systemd/system/x-ui.service"
 
-RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.5.18/x-ui-linux-${arch}.tar.gz"
+RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.8.3/x-ui-linux-${arch}.tar.gz"
 
 install_dependencies() {
     i18n "install_deps"
@@ -189,8 +189,8 @@ install_xray() {
     fi
     
     local xray_lite_file="vless-server-linux-${xray_lite_arch}"
-    # Download from x-ui-lite release instead of xray-lite repo (Reverted to v0.4.2)
-    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.4.2/${xray_lite_file}"
+    # Download from x-ui-lite release instead of xray-lite repo (Updated to v0.4.3)
+    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.4.3/${xray_lite_file}"
     
     # Try downloading xray-lite
     wget -N --no-check-certificate -q -O /tmp/vless-server $xray_lite_url
