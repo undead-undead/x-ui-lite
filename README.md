@@ -64,7 +64,7 @@ If you like this project, you can buy me a coffee to support the development!
 <a href="https://buymeacoffee.com/undeadundead" target="_blank">
   <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" >
 </a>
-
+sol:GJu2g8nd5pQMCdPj1uBJ2bdDguSTMXU6uqXmUbYPS9x base:0xBC14Ef78a454b4D52A1b0605b707b85Eb9A6b9A1 btc:162vtnicREByPgxh6KLbp2tknXuFCQDHMC sui:0xd6d896a0ab9ec220c32b17ebc3f641a3a1d7fa140c3c03d9307797704132dc78
 ---
 
 ## 📜 License
