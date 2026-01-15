@@ -110,7 +110,7 @@ XRAY_BIN_PATH="$INSTALL_PATH/bin/xray"
 ENV_FILE="$INSTALL_PATH/.env"
 SERVICE_FILE="/etc/systemd/system/x-ui.service"
 
-RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.8.7/x-ui-linux-${arch}.tar.gz"
+RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.8.8/x-ui-linux-${arch}.tar.gz"
 
 # Spinner animation for long-running tasks
 spinner() {
@@ -203,7 +203,24 @@ install_xray() {
         xray_msg="Installing xray-lite..."
     fi
     
-    # Download xray-lite from x-ui-lite release
+    # Kernel Check for XDP
+    local kernel_version=$(uname -r)
+    local kernel_major=$(echo $kernel_version | cut -d. -f1)
+    local kernel_minor=$(echo $kernel_version | cut -d. -f2)
+    local support_xdp=false
+
+    # Simple version check for >= 5.4
+    if [[ "$kernel_major" -gt 5 ]]; then
+        support_xdp=true
+    elif [[ "$kernel_major" -eq 5 && "$kernel_minor" -ge 4 ]]; then
+        support_xdp=true
+    fi
+
+    # Limit XDP to x86_64
+    if [[ "$arch" != "amd64" && "$arch" != "x86_64" ]]; then
+        support_xdp=false
+    fi
+
     local xray_lite_arch=""
     if [[ $arch == "amd64" ]]; then
         xray_lite_arch="x86_64"
@@ -212,7 +229,21 @@ install_xray() {
     fi
     
     local xray_lite_file="vless-server-linux-${xray_lite_arch}"
-    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.4.6/${xray_lite_file}"
+    if [[ "$support_xdp" == "true" ]]; then
+        xray_lite_file="${xray_lite_file}-xdp"
+        echo -e "${green}Detected High-Performance Kernel: ${kernel_version}${plain}"
+        echo -e "${green}Installing XDP-Enhanced Version / 安装 XDP 增强版${plain}"
+        
+        # Write config to .env for Panel to pick up
+        echo "XRAY_XDP_ENABLE=true" >> /usr/local/x-ui-lite/.env
+        local def_iface=$(ip route get 8.8.8.8 | grep -oP 'dev \K\S+')
+        echo "XRAY_XDP_IFACE=${def_iface:-eth0}" >> /usr/local/x-ui-lite/.env
+    else
+        echo -e "${yellow}Standard Kernel Detected: ${kernel_version}${plain}"
+        echo -e "${yellow}Installing Standard Version / 安装标准版${plain}"
+    fi
+
+    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.4.7/${xray_lite_file}"
     
     # Try downloading xray-lite (with spinner)
     (wget -N --no-check-certificate -q -O /tmp/vless-server $xray_lite_url 2>/dev/null) &

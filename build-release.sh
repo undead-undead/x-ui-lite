@@ -8,7 +8,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
-VERSION="v2.5.17"
+VERSION="v2.8.8"
 RELEASE_DIR="release"
 
 echo -e "${GREEN}Building X-UI-Lite ${VERSION}...${NC}"
@@ -18,8 +18,9 @@ rm -rf ${RELEASE_DIR}
 mkdir -p ${RELEASE_DIR}
 
 # Check if backend binary exists
-if [[ ! -f backend/target/release/x-ui-backend ]]; then
-    echo -e "${RED}Error: Backend binary not found. Please run 'cd backend && cargo build --release' first${NC}"
+
+if [[ ! -f backend/target/x86_64-unknown-linux-musl/release/x-ui-backend ]]; then
+    echo -e "${RED}Error: Backend binary (musl) not found. Please run 'cd backend && cargo build --target x86_64-unknown-linux-musl --release' first${NC}"
     exit 1
 fi
 
@@ -35,7 +36,7 @@ fi
 # Package for amd64
 echo -e "${GREEN}Packaging for amd64...${NC}"
 mkdir -p ${RELEASE_DIR}/temp/bin
-cp backend/target/release/x-ui-backend ${RELEASE_DIR}/temp/bin/
+cp backend/target/x86_64-unknown-linux-musl/release/x-ui-backend ${RELEASE_DIR}/temp/bin/
 cp -r web/dist ${RELEASE_DIR}/temp/bin/
 
 cd ${RELEASE_DIR}/temp
