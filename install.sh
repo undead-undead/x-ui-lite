@@ -110,7 +110,7 @@ XRAY_BIN_PATH="$INSTALL_PATH/bin/xray"
 ENV_FILE="$INSTALL_PATH/.env"
 SERVICE_FILE="/etc/systemd/system/x-ui.service"
 
-RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.8.9/x-ui-linux-${arch}.tar.gz"
+RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.8.10/x-ui-linux-${arch}.tar.gz"
 
 # Spinner animation for long-running tasks
 spinner() {
@@ -235,9 +235,11 @@ install_xray() {
         echo -e "${green}Installing XDP-Enhanced Version / 安装 XDP 增强版${plain}"
         
         # Write config to .env for Panel to pick up
-        echo "XRAY_XDP_ENABLE=true" >> /usr/local/x-ui-lite/.env
+        # Ensure ENV_FILE directory exists (though install_x_ui should have created it, but just in case)
+        mkdir -p $(dirname $ENV_FILE)
+        echo "XRAY_XDP_ENABLE=true" >> $ENV_FILE
         local def_iface=$(ip route get 8.8.8.8 | grep -oP 'dev \K\S+')
-        echo "XRAY_XDP_IFACE=${def_iface:-eth0}" >> /usr/local/x-ui-lite/.env
+        echo "XRAY_XDP_IFACE=${def_iface:-eth0}" >> $ENV_FILE
     else
         echo -e "${yellow}Standard Kernel Detected: ${kernel_version}${plain}"
         echo -e "${yellow}Installing Standard Version / 安装标准版${plain}"
