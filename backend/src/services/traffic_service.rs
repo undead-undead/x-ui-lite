@@ -124,9 +124,18 @@ fn ensure_jump_rule_at_top(cmd: &str, base_chain: &str, target_chain: &str) -> A
 
     if !is_at_top {
         // Remove all occurrences first to avoid duplicates
-        while Command::new(cmd).args(["-D", base_chain, "-j", target_chain]).status().map(|s| s.success()).unwrap_or(false) {}
+        // Limit loop to 5 to prevent infinite loop
+        for _ in 0..5 {
+            let success = Command::new(cmd)
+                .args(["-D", base_chain, "-j", target_chain])
+                .output()
+                .map(|o| o.status.success())
+                .unwrap_or(false);
+            if !success { break; }
+        }
+        
         // Insert at 1
-        let _ = Command::new(cmd).args(["-I", base_chain, "1", "-j", target_chain]).status();
+        let _ = Command::new(cmd).args(["-I", base_chain, "1", "-j", target_chain]).output();
     }
     Ok(())
 }
