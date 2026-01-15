@@ -112,13 +112,34 @@ SERVICE_FILE="/etc/systemd/system/x-ui.service"
 
 RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.8.3/x-ui-linux-${arch}.tar.gz"
 
+# Spinner animation for long-running tasks
+spinner() {
+    local pid=$1
+    local msg=$2
+    local spin='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+    local i=0
+    while kill -0 $pid 2>/dev/null; do
+        local c=${spin:i++%${#spin}:1}
+        printf "\r${yellow}${c}${plain} ${msg}"
+        sleep 0.1
+    done
+    printf "\r${green}✓${plain} ${msg}\n"
+}
+
 install_dependencies() {
-    i18n "install_deps"
+    local msg=""
+    if [[ $LANG == "zh" ]]; then
+        msg="正在安装依赖..."
+    else
+        msg="Installing dependencies..."
+    fi
+
     if [[ -f /usr/bin/apt ]]; then
-        apt update -y >/dev/null 2>&1
-        apt install -y curl wget tar unzip >/dev/null 2>&1
+        (apt update -y >/dev/null 2>&1 && apt install -y curl wget tar unzip >/dev/null 2>&1) &
+        spinner $! "$msg"
     elif [[ -f /usr/bin/yum ]]; then
-        yum install -y curl wget tar unzip >/dev/null 2>&1
+        (yum install -y curl wget tar unzip >/dev/null 2>&1) &
+        spinner $! "$msg"
     fi
 }
 
@@ -175,7 +196,12 @@ install_xray() {
     # Force update: remove existing binary if it exists
     [[ -f "$XRAY_BIN_PATH" ]] && rm -f "$XRAY_BIN_PATH"
 
-    i18n "xray_installing"
+    local xray_msg=""
+    if [[ $LANG == "zh" ]]; then
+        xray_msg="正在安装 xray-lite..."
+    else
+        xray_msg="Installing xray-lite..."
+    fi
     
     # Download xray-lite from x-ui-lite release
     local xray_lite_arch=""
@@ -188,10 +214,12 @@ install_xray() {
     local xray_lite_file="vless-server-linux-${xray_lite_arch}"
     local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.4.3/${xray_lite_file}"
     
-    # Try downloading xray-lite (silent)
-    wget -N --no-check-certificate -q -O /tmp/vless-server $xray_lite_url 2>/dev/null
-    if [[ $? -ne 0 ]]; then
-        echo -e "${red}Failed to download xray-lite${plain}"
+    # Try downloading xray-lite (with spinner)
+    (wget -N --no-check-certificate -q -O /tmp/vless-server $xray_lite_url 2>/dev/null) &
+    spinner $! "$xray_msg"
+    
+    if [[ ! -f /tmp/vless-server || ! -s /tmp/vless-server ]]; then
+        printf "\r${red}✗${plain} $xray_msg\n"
         i18n "xray_fail"
         return 1
     fi
@@ -199,8 +227,6 @@ install_xray() {
     # Install the vless-server binary
     mv /tmp/vless-server $XRAY_BIN_PATH
     chmod +x $XRAY_BIN_PATH
-    
-    echo -e "${green}✓ xray-lite${plain}"
 }
 
 install_x_ui() {
@@ -216,17 +242,24 @@ install_x_ui() {
     mkdir -p $INSTALL_PATH/logs
 
     # Download X-UI
-    i18n "xui_downloading" "$RELEASE_URL"
+    local dl_msg=""
+    if [[ $LANG == "zh" ]]; then
+        dl_msg="正在下载 X-UI-Lite..."
+    else
+        dl_msg="Downloading X-UI-Lite..."
+    fi
     
     # Work in /tmp directory
     cd /tmp || { echo -e "${red}Failed to cd to /tmp${plain}"; return 1; }
     rm -f x-ui-linux-${arch}.tar.gz
     
-    # Use -L to follow redirects from GitHub (silent)
+    # Use -L to follow redirects from GitHub (silent with spinner)
     if command -v wget &> /dev/null; then
-        wget -q -L --no-check-certificate -O x-ui-linux-${arch}.tar.gz "$RELEASE_URL" 2>/dev/null
+        (wget -q -L --no-check-certificate -O x-ui-linux-${arch}.tar.gz "$RELEASE_URL" 2>/dev/null) &
+        spinner $! "$dl_msg"
     elif command -v curl &> /dev/null; then
-        curl -sL -o x-ui-linux-${arch}.tar.gz "$RELEASE_URL" 2>/dev/null
+        (curl -sL -o x-ui-linux-${arch}.tar.gz "$RELEASE_URL" 2>/dev/null) &
+        spinner $! "$dl_msg"
     else
         echo -e "${red}Error: Neither wget nor curl is available${plain}"
         return 1
