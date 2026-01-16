@@ -21,9 +21,16 @@ A high-performance, minimalist X-UI panel powered by **xray-lite**.
 bash <(curl -fsSL https://raw.githubusercontent.com/undead-undead/x-ui-lite/feature/xdp-integration/install.sh)
 ```
 
-> **Note**: This is a **static compilation version** that works perfectly on **any Linux system** (Debian, Ubuntu, CentOS, Alpine, etc.) without dependency issues.
+> **Note**: This is a **static compilation version** that works perfectly on **any Linux system**.
 >
-> **注意**：此为**静态编译版本**，完美适配**任何 Linux 系统** (Debian, Ubuntu, CentOS, Alpine 等)，无需担心依赖问题。
+> **🔥 XDP Firewall Requirements**:
+> - **Recommended**: Kernel ≥ 5.15 (Ubuntu 22.04+, Debian 11+) for Native Mode (Best Performance).
+> - **Minimum**: Kernel 5.4+ (generic Mode may require legacy support).
+> - **XDP is automatically enabled** if supported kernel is detected.
+>
+> **注意**：
+> - **🔥 XDP 防火墙要求**：推荐内核 ≥ 5.15 (Ubuntu 22.04+, Debian 11+) 以启用原生高性能模式。
+> - 脚本若检测到支持的内核，将**自动启用 XDP 防火墙** (丢弃恶意 UDP 包)。
 
 ---
 
