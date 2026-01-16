@@ -260,6 +260,24 @@ install_xray() {
     # Install the vless-server binary
     mv /tmp/vless-server $XRAY_BIN_PATH
     chmod +x $XRAY_BIN_PATH
+
+    # If XDP is enabled, create a wrapper script to pass arguments
+    if [[ "$support_xdp" == "true" ]]; then
+        echo -e "${green}Creating XDP Wrapper Script...${plain}"
+        local real_bin="${XRAY_BIN_PATH}.real"
+        mv $XRAY_BIN_PATH $real_bin
+        
+        # Get interface again to be safe
+        local def_iface=$(ip route get 8.8.8.8 | grep -oP 'dev \K\S+')
+        local iface="${def_iface:-eth0}"
+
+        cat > $XRAY_BIN_PATH <<EOF
+#!/bin/bash
+exec $real_bin "\$@" --enable-xdp --xdp-iface $iface
+EOF
+        chmod +x $XRAY_BIN_PATH
+        echo -e "${green}✓ XDP Wrapper created for interface: $iface${plain}"
+    fi
 }
 
 install_x_ui() {
