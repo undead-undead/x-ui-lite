@@ -30,14 +30,15 @@ bash <(curl -fsSL https://raw.githubusercontent.com/undead-undead/x-ui-lite/main
 >
 > **注意**：此为**静态编译版本**，完美适配**任何 Linux 系统** (Debian, Ubuntu, CentOS, Alpine 等)，无需担心依赖问题。
 
-### 2. Beta Release (XDP Firewall) / 测试版（XDP 防火墙）
+### 2. XDP Release (Performance) / XDP 版（高性能）
 
-> **Beta Version: Feature Preview (Core v0.5.0-rc4)**
+> **Version: v2.8.11 (Core v0.5.0 Stable)**
 > 
 > **Requirements**: Linux Kernel ≥ 5.4, Root Privileges.
 
-**Why Beta? / 为什么选择测试版？**
-*   🛡️ **XDP Firewall**: Kernel-level protection against UDP Floods & Probing. / 内核级防御 UDP 洪水和探测。
+**Why XDP? / 为什么选择 XDP 版？**
+*   🛡️ **XDP Firewall**: Kernel-level protection against TCP SYN Floods & Illegal Flags. / 内核级防御 TCP SYN 洪水和非法标志。
+*   🛑 **Anti-Probe**: Instantly drops **Illegal TCP Packets** (e.g., Null Scan, SYN+FIN). UDP is passed through for QUIC compatibility. / 在网卡驱动层直接丢弃非法 TCP 包。（UDP 流量放行以支持 QUIC 兼容性）。
 *   🚀 **Performance**: Drop malicious packets at driver level, saving CPU. / 驱动层丢包，极致性能。
 
 ```bash
