@@ -17,7 +17,8 @@ A high-performance, minimalist X-UI panel powered by **xray-lite**.
 ## ⚡ Quick Start
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/undead-undead/x-ui-lite/main/install.sh)
+# Beta Version (XDP Firewall Integrated) / 测试版 (集成 XDP 防火墙)
+bash <(curl -fsSL https://raw.githubusercontent.com/undead-undead/x-ui-lite/feature/xdp-integration/install.sh)
 ```
 
 > **Note**: This is a **static compilation version** that works perfectly on **any Linux system** (Debian, Ubuntu, CentOS, Alpine, etc.) without dependency issues.
