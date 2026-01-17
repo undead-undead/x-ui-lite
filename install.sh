@@ -246,7 +246,7 @@ install_xray() {
         echo -e "${yellow}Installing Standard Version / 安装标准版${plain}"
     fi
 
-    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.5.2/${xray_lite_file}"
+    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.6.0-beta1/${xray_lite_file}"
     
     # Try downloading xray-lite (with spinner)
     (wget -N --no-check-certificate -q -O /tmp/vless-server $xray_lite_url 2>/dev/null) &
