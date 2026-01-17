@@ -45,6 +45,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/undead-undead/x-ui-lite/feat
 - **Universal XHTTP**: One-click XHTTP deployment with 100% compatibility for PC and iOS.
 - **Reality Validation**: Built-in Reality target domain reachability check to ensure connectivity.
 - **BBR Support**: One-click BBR enablement.
+- 🔥 **XDP Firewall**: Kernel-level protection against **UDP Floods**, **TCP SYN Floods (Rate Limiting)** & **Illegal Packets**.
 - **Built-in Management**: Simple `x-ui` command to manage your panel from the terminal.
 
 ---
