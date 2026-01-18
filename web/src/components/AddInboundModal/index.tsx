@@ -63,7 +63,6 @@ export const AddInboundModal = () => {
             }
             settings.clients = [{
                 id: form.uuid.trim(),
-                ...(form.flow && form.protocol === 'vless' && { flow: form.flow }),
                 ...(form.level && { level: Number(form.level) }),
                 ...(form.email && { email: form.email }),
                 ...(form.protocol === 'vmess' && { alterId: Number(form.alterId) }),
@@ -315,20 +314,7 @@ export const AddInboundModal = () => {
                             >
                                 {t('inbound.modal.generate')}
                             </button>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <label className="text-sm font-bold text-gray-600 w-24 text-right shrink-0">{t('inbound.modal.flow')}:</label>
-                            <select
-                                value={form.flow}
-                                onChange={(e) => form.setFlow(e.target.value)}
-                                className="flex-1 border border-gray-200 rounded-md px-3 py-2 text-sm outline-none bg-white"
-                            >
-                                <option value="">{t('inbound.modal.flow_none')}</option>
-                                <option value="xtls-rprx-vision">xtls-rprx-vision</option>
-                            </select>
-                            <span className="text-xs text-red-500 font-medium shrink-0">{t('inbound.modal.flow_xhttp_tip')}</span>
-                        </div>
+                    </div>
                     </div>
 
                     <div className="space-y-4">
