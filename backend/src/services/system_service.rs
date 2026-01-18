@@ -393,12 +393,12 @@ pub async fn restart_panel() -> ApiResult<()> {
 }
 
 pub async fn update_xray(monitor: SharedMonitor, version: String) -> ApiResult<()> {
-    tracing::info!("Start updating Xray to version: {}", version);
+    tracing::info!("Start updating xray-lite to version: {}", version);
 
     let arch = std::env::consts::ARCH;
     let xray_arch = match arch {
-        "x86_64" => "64",
-        "aarch64" => "arm64-v8a",
+        "x86_64" => "amd64",
+        "aarch64" => "arm64",
         _ => {
             return Err(crate::errors::ApiError::SystemError(format!(
                 "Unsupported architecture: {}",
@@ -413,8 +413,9 @@ pub async fn update_xray(monitor: SharedMonitor, version: String) -> ApiResult<(
         format!("v{}", version)
     };
 
+    // xray-lite uses direct binary files: xray-linux-amd64 or xray-linux-arm64
     let url = format!(
-        "https://github.com/XTLS/Xray-core/releases/download/{}/Xray-linux-{}.zip",
+        "https://github.com/undead-undead/xray-lite/releases/download/{}/xray-linux-{}",
         tag_name, xray_arch
     );
     tracing::info!("Downloading from: {}", url);
@@ -442,20 +443,12 @@ pub async fn update_xray(monitor: SharedMonitor, version: String) -> ApiResult<(
         .await
         .map_err(|e| crate::errors::ApiError::SystemError(format!("Failed to read body: {}", e)))?;
 
+    // xray-lite provides direct binary, no zip extraction needed
     {
-        let reader = std::io::Cursor::new(content);
-        let mut zip = zip::ZipArchive::new(reader).map_err(|e| {
-            crate::errors::ApiError::SystemError(format!("Failed to open zip: {}", e))
-        })?;
-
-        let mut xray_file = zip.by_name("xray").map_err(|_| {
-            crate::errors::ApiError::SystemError("xray binary not found in zip".to_string())
-        })?;
-
         let bin_path_str =
             std::env::var("XRAY_BIN_PATH").unwrap_or("/usr/local/bin/xray".to_string());
         let bin_path = std::path::Path::new(&bin_path_str);
-        tracing::info!("Xray binary will be updated at: {}", bin_path.display());
+        tracing::info!("xray-lite binary will be updated at: {}", bin_path.display());
 
         if let Some(parent) = bin_path.parent() {
             if !parent.exists() {
@@ -466,15 +459,9 @@ pub async fn update_xray(monitor: SharedMonitor, version: String) -> ApiResult<(
         }
 
         let tmp_path = bin_path.with_extension("tmp");
-        let mut tmp_file = std::fs::File::create(&tmp_path).map_err(|e| {
-            crate::errors::ApiError::SystemError(format!("Failed to create tmp file: {}", e))
-        })?;
-
-        std::io::copy(&mut xray_file, &mut tmp_file).map_err(|e| {
+        std::fs::write(&tmp_path, &content).map_err(|e| {
             crate::errors::ApiError::SystemError(format!("Failed to write binary: {}", e))
         })?;
-
-        drop(tmp_file);
 
         #[cfg(unix)]
         {
@@ -491,7 +478,7 @@ pub async fn update_xray(monitor: SharedMonitor, version: String) -> ApiResult<(
         })?;
     }
 
-    tracing::info!("Xray binary updated successfully to {}", version);
+    tracing::info!("xray-lite binary updated successfully to {}", version);
 
     restart_xray(monitor).await?;
 
@@ -511,8 +498,9 @@ pub async fn get_xray_releases() -> ApiResult<Vec<String>> {
             crate::errors::ApiError::SystemError(format!("Failed to build client: {}", e))
         })?;
 
+    // Fetch releases from xray-lite repository
     let res = client
-        .get("https://api.github.com/repos/XTLS/Xray-core/releases")
+        .get("https://api.github.com/repos/undead-undead/xray-lite/releases")
         .send()
         .await
         .map_err(|e| {
