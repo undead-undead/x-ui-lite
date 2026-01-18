@@ -344,9 +344,34 @@ pub async fn start_xray(monitor: SharedMonitor) -> ApiResult<()> {
             crate::errors::ApiError::SystemError(format!("Failed to create stderr log: {}", e))
         })?;
 
-        let child = std::process::Command::new(&bin_path_str)
-            .arg("-c")
-            .arg(&config_path_str)
+        let mut cmd = std::process::Command::new(&bin_path_str);
+        cmd.arg("-c").arg(&config_path_str);
+
+        // Auto-detect version features
+        match std::process::Command::new(&bin_path_str).arg("--version").output() {
+            Ok(output) => {
+                let v = String::from_utf8_lossy(&output.stdout);
+                tracing::info!("Detected Xray version string: {}", v.trim());
+                
+                if v.contains("beta1") {
+                    tracing::info!("✅ Auto-enabling io_uring mode (--uring)");
+                    cmd.arg("--uring");
+                }
+                if v.contains("xdp") {
+                    tracing::info!("✅ Auto-enabling XDP mode (--enable-xdp)");
+                    cmd.arg("--enable-xdp");
+                    // Read interface from env if available
+                    if let Ok(iface) = std::env::var("XRAY_XDP_IFACE") {
+                         if !iface.is_empty() {
+                             cmd.arg("--xdp-iface").arg(iface);
+                         }
+                    }
+                }
+            },
+            Err(e) => tracing::warn!("Failed to detect xray version: {}", e),
+        }
+
+        let child = cmd
             .env("GOMEMLIMIT", "150MiB")
             .env("GOGC", "50")
             .stdout(stdout_file)
@@ -355,9 +380,8 @@ pub async fn start_xray(monitor: SharedMonitor) -> ApiResult<()> {
 
         match child {
             Ok(_) => tracing::info!(
-                "Xray process started directly: {} -c {}",
-                bin_path_str,
-                config_path_str
+                "Xray process started: {:?}",
+                cmd
             ),
             Err(e) => {
                 tracing::error!("Failed to start xray process: {}", e);
