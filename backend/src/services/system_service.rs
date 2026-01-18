@@ -414,9 +414,16 @@ pub async fn update_xray(monitor: SharedMonitor, version: String) -> ApiResult<(
     };
 
     // xray-lite uses direct binary files: xray-linux-amd64 or xray-linux-arm64
+    let mut binary_name = format!("xray-linux-{}", xray_arch);
+
+    // 特殊处理 XDP 版本，指向 release 中明确带有 -xdp 后缀的文件，避免下载到旧文件或缓存
+    if tag_name == "v0.6.0-xdp" && xray_arch == "amd64" {
+        binary_name = "xray-linux-amd64-xdp".to_string();
+    }
+
     let url = format!(
-        "https://github.com/undead-undead/xray-lite/releases/download/{}/xray-linux-{}",
-        tag_name, xray_arch
+        "https://github.com/undead-undead/xray-lite/releases/download/{}/{}",
+        tag_name, binary_name
     );
     tracing::info!("Downloading from: {}", url);
 
