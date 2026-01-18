@@ -208,64 +208,19 @@ install_xray() {
     local kernel_major=$(echo $kernel_version | cut -d. -f1)
     local kernel_minor=$(echo $kernel_version | cut -d. -f2)
     local support_xdp=false
-
-    # Simple version check for >= 5.4
-    if [[ "$kernel_major" -gt 5 ]]; then
-        support_xdp=true
-    elif [[ "$kernel_major" -eq 5 && "$kernel_minor" -ge 4 ]]; then
-        support_xdp=true
-    fi
-
-    # Limit XDP to x86_64
-    if [[ "$arch" != "amd64" && "$arch" != "x86_64" ]]; then
-        support_xdp=false
-    fi
-
-    local xray_lite_arch=""
-    if [[ $arch == "amd64" ]]; then
-        xray_lite_arch="x86_64"
-    elif [[ $arch == "arm64" ]]; then
-        xray_lite_arch="aarch64"
-    fi
-    
-    # Updated to match the single static binary name in release
     local xray_lite_file="xray-linux-amd64"
-    if [[ "$support_xdp" == "true" ]]; then
-    #     xray_lite_file="${xray_lite_file}-xdp"
-        echo -e "${green}Detected High-Performance Kernel: ${kernel_version}${plain}"
-        echo -e "${green}Installing XDP-Enhanced Version / 安装 XDP 增强版${plain}"
-        
-        # Write config to .env for Panel to pick up
-        # Ensure ENV_FILE directory exists (though install_x_ui should have created it, but just in case)
-        mkdir -p $(dirname $ENV_FILE)
-        echo "XRAY_XDP_ENABLE=true" >> $ENV_FILE
-        local def_iface=$(ip route get 8.8.8.8 | grep -oP 'dev \K\S+')
-        echo "XRAY_XDP_IFACE=${def_iface:-eth0}" >> $ENV_FILE
-    else
-        echo -e "${yellow}Standard Kernel Detected: ${kernel_version}${plain}"
-        echo -e "${yellow}Installing Standard Version / 安装标准版${plain}"
-    fi
-
-    # Check for io_uring support (Kernel >= 5.10)
-    local support_uring=false
-    if [[ "$kernel_major" -gt 5 ]]; then
-        support_uring=true
-    elif [[ "$kernel_major" -eq 5 && "$kernel_minor" -ge 10 ]]; then
-        support_uring=true
-    fi
-
-    local enable_uring="n"
-    if [[ "$support_uring" == "true" ]]; then
-        echo -e ""
-        echo -e "${yellow}Kernel 5.10+ detected, io_uring optimization available (High Performance)${plain}"
-        echo -e "${yellow}检测到内核 5.10+，可用 io_uring 性能优化 (高性能)${plain}"
-        read -p "Enable io_uring? / 启用 io_uring? (y/N): " uring_choice
-        if [[ "$uring_choice" == "y" || "$uring_choice" == "Y" ]]; then
-            enable_uring="y"
-        fi
-    fi
-
-    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.6.0-beta1/${xray_lite_file}"
+    
+    # 默认安装稳定版 v0.5.2 (Tokio)
+    # 用户可以在面板的"切换版本"中选择其他版本:
+    # - v0.5.2: 稳定版 (Tokio)
+    # - v0.6.0-xdp: XDP 防火墙版 (内核 5.4+)
+    # - v0.6.0-beta1: io_uring 优化版 (内核 5.10+)
+    
+    echo -e "${green}Installing xray-lite stable version (v0.5.2)${plain}"
+    echo -e "${green}安装 xray-lite 稳定版 (v0.5.2)${plain}"
+    echo -e "${yellow}You can switch to XDP or io_uring version in panel / 可在面板中切换到 XDP 或 io_uring 版本${plain}"
+    
+    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.5.2/${xray_lite_file}"
     
     # Try downloading xray-lite (with spinner)
     (wget -N --no-check-certificate -q -O /tmp/vless-server $xray_lite_url 2>/dev/null) &
@@ -280,33 +235,8 @@ install_xray() {
     # Install the vless-server binary
     mv /tmp/vless-server $XRAY_BIN_PATH
     chmod +x $XRAY_BIN_PATH
-
-    # If XDP is enabled, create a wrapper script to pass arguments
-    # If XDP or io_uring is enabled, create a wrapper script to pass arguments
-    if [[ "$support_xdp" == "true" || "$enable_uring" == "y" ]]; then
-        echo -e "${green}Creating Xray Wrapper Script...${plain}"
-        local real_bin="${XRAY_BIN_PATH}.real"
-        mv $XRAY_BIN_PATH $real_bin
-        
-        # Get interface again to be safe
-        local def_iface=$(ip route get 8.8.8.8 | grep -oP 'dev \K\S+')
-        local iface="${def_iface:-eth0}"
-        
-        local extra_args=""
-        if [[ "$support_xdp" == "true" ]]; then
-            extra_args="$extra_args --enable-xdp --xdp-iface $iface"
-        fi
-        if [[ "$enable_uring" == "y" ]]; then
-            extra_args="$extra_args --uring"
-        fi
-
-        cat > $XRAY_BIN_PATH <<EOF
-#!/bin/bash
-exec $real_bin "\$@" $extra_args
-EOF
-        chmod +x $XRAY_BIN_PATH
-        echo -e "${green}✓ Wrapper created (XDP: $support_xdp, io_uring: $enable_uring)${plain}"
-    fi
+    
+    printf "\r${green}✓${plain} $xray_msg\n"
 }
 
 install_x_ui() {
