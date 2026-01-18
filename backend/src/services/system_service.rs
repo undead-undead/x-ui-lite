@@ -518,7 +518,17 @@ pub async fn get_xray_releases() -> ApiResult<Vec<String>> {
         crate::errors::ApiError::SystemError(format!("Failed to parse releases: {}", e))
     })?;
 
-    Ok(releases.into_iter().map(|r| r.tag_name).collect())
+    // 只保留 3 个主要版本
+    // v0.5.2: 稳定版 (Tokio, 适用于所有内核)
+    // v0.6.0-xdp: XDP 防火墙版 (需要内核 5.4+)
+    // v0.6.0-beta1: io_uring 优化版 (需要内核 5.10+, 需禁用客户端 Flow)
+    let allowed_versions = ["v0.5.2", "v0.6.0-xdp", "v0.6.0-beta1"];
+    
+    Ok(releases
+        .into_iter()
+        .map(|r| r.tag_name)
+        .filter(|tag| allowed_versions.contains(&tag.as_str()))
+        .collect())
 }
 
 fn get_connection_counts() -> (usize, usize) {
