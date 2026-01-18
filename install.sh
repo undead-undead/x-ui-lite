@@ -110,7 +110,7 @@ XRAY_BIN_PATH="$INSTALL_PATH/bin/xray"
 ENV_FILE="$INSTALL_PATH/.env"
 SERVICE_FILE="/etc/systemd/system/x-ui.service"
 
-RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.9.5/x-ui-linux-${arch}.tar.gz"
+RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.9.6/x-ui-linux-${arch}.tar.gz"
 
 # Spinner animation for long-running tasks
 spinner() {

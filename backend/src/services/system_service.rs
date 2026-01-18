@@ -420,6 +420,10 @@ pub async fn update_xray(monitor: SharedMonitor, version: String) -> ApiResult<(
     if tag_name == "v0.6.0-xdp" && xray_arch == "amd64" {
         binary_name = "xray-linux-amd64-xdp".to_string();
     }
+    // 特殊处理 Beta1 (io_uring) 版本，指向明确带有 -uring 后缀的文件，避开 CDN 缓存
+    if tag_name == "v0.6.0-beta1" && xray_arch == "amd64" {
+        binary_name = "xray-linux-amd64-uring".to_string();
+    }
 
     let url = format!(
         "https://github.com/undead-undead/xray-lite/releases/download/{}/{}",
