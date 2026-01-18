@@ -110,7 +110,7 @@ XRAY_BIN_PATH="$INSTALL_PATH/bin/xray"
 ENV_FILE="$INSTALL_PATH/.env"
 SERVICE_FILE="/etc/systemd/system/x-ui.service"
 
-RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.9.2/x-ui-linux-${arch}.tar.gz"
+RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.9.3/x-ui-linux-${arch}.tar.gz"
 
 # Spinner animation for long-running tasks
 spinner() {
@@ -210,17 +210,17 @@ install_xray() {
     local support_xdp=false
     local xray_lite_file="xray-linux-amd64"
     
-    # 默认安装稳定版 v0.5.2 (Tokio)
+    # 默认安装稳定版 v0.4.6 (Tokio)
     # 用户可以在面板的"切换版本"中选择其他版本:
-    # - v0.5.2: 稳定版 (Tokio)
+    # - v0.4.6: 稳定版 (Tokio)
     # - v0.6.0-xdp: XDP 防火墙版 (内核 5.4+)
-    # - v0.6.0-beta1: io_uring 优化版 (内核 5.10+)
+    # - v0.6.0-beta1: io_uring 优化版 (内核 5.10+, 需禁用 Flow)
     
-    echo -e "${green}Installing xray-lite stable version (v0.5.2)${plain}"
-    echo -e "${green}安装 xray-lite 稳定版 (v0.5.2)${plain}"
+    echo -e "${green}Installing xray-lite stable version (v0.4.6)${plain}"
+    echo -e "${green}安装 xray-lite 稳定版 (v0.4.6)${plain}"
     echo -e "${yellow}You can switch to XDP or io_uring version in panel / 可在面板中切换到 XDP 或 io_uring 版本${plain}"
     
-    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.5.2/${xray_lite_file}"
+    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.4.6/${xray_lite_file}"
     
     # Try downloading xray-lite (with spinner)
     (wget -N --no-check-certificate -q -O /tmp/vless-server $xray_lite_url 2>/dev/null) &

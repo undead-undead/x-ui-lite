@@ -21,7 +21,7 @@ A high-performance, minimalist X-UI panel powered by **xray-lite**.
 > **Current Version: v2.9.2**
 >
 > **Included Kernels (Switchable in Panel):**
-> - **Stable**: v0.5.2 (Tokio) - Recommended for production
+> - **Stable**: v0.4.6 (Tokio) - Recommended for production
 > - **XDP Firewall**: v0.6.0-xdp - Anti-DDoS/Flood protection (Kernel 5.4+)
 > - **High Performance**: v0.6.0-beta1 - io_uring optimized (Kernel 5.10+)
 
