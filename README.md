@@ -16,42 +16,35 @@ A high-performance, minimalist X-UI panel powered by **xray-lite**.
 
 ## ⚡ Quick Start
 
-### 1. Stable Release (Recommended) / 稳定版（推荐）
+### 📋 Installation / 安装
 
-> **Stable Version: v2.8.7 (Core v0.4.6)**
+> **Current Version: v2.9.2**
 >
-> 适用于生产环境，稳定可靠。
+> **Included Kernels (Switchable in Panel):**
+> - **Stable**: v0.5.2 (Tokio) - Recommended for production
+> - **XDP Firewall**: v0.6.0-xdp - Anti-DDoS/Flood protection (Kernel 5.4+)
+> - **High Performance**: v0.6.0-beta1 - io_uring optimized (Kernel 5.10+)
 
 ```bash
-# Beta Version (XDP Firewall Integrated) / 测试版 (集成 XDP 防火墙)
-bash <(curl -fsSL https://raw.githubusercontent.com/undead-undead/x-ui-lite/feature/xdp-integration/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/undead-undead/x-ui-lite/main/install.sh)
 ```
 
 > **Note**: This is a **static compilation version** that works perfectly on **any Linux system**.
 >
-> **🔥 XDP Firewall Requirements**:
-> - **Recommended**: Kernel ≥ 5.15 (Ubuntu 22.04+, Debian 11+) for Native Mode (Best Performance).
-> - **Minimum**: Kernel 5.4+ (generic Mode may require legacy support).
-> - **XDP is automatically enabled** if supported kernel is detected.
->
 > **注意**：
-> - **🔥 XDP 防火墙要求**：推荐内核 ≥ 5.15 (Ubuntu 22.04+, Debian 11+) 以启用原生高性能模式。
-> - 脚本若检测到支持的内核，将**自动启用 XDP 防火墙** (丢弃恶意 UDP 包和非法 TCP 包，保护 443 端口)。
+> - 脚本默认安装**稳定版**内核。
+> - 如需 **XDP 防火墙**或 **io_uring 高性能**模式，请在面板的【系统状态】->【切换版本】中选择对应版本。
 
-### 2. XDP Release (Performance) / XDP 版（高性能）
+### 🔥 XDP Firewall (Optional) / XDP 防火墙（可选）
 
-> **Version: v2.8.12 (Core v0.6.0-beta1)**
-> 
-> **Requirements**: Linux Kernel ≥ 5.4, Root Privileges.
+If you switch to **v0.6.0-xdp** in the panel:
 
-**Why XDP? / 为什么选择 XDP 版？**
-*   🛡️ **XDP Firewall**: Kernel-level protection against **UDP Floods**, **TCP SYN Floods (Rate Limit)** & **Illegal Flags**. / 内核级防御 UDP 洪水、TCP SYN 洪水（限流）和非法标志。
-*   🛑 **Anti-Probe**: Instantly drops **UDP Floods** and **Illegal TCP Packets** (e.g., Null Scan, SYN+FIN). / 瞬时丢弃 UDP 洪水和非法 TCP 包。
-*   🚀 **Performance**: Drop malicious packets at driver level, saving CPU. / 驱动层丢包，极致性能。
+*   🛡️ **XDP Firewall**: Kernel-level protection against **UDP Floods**, **TCP SYN Floods (Rate Limit)** & **Illegal Flags**.
+*   🛑 **Anti-Probe**: Instantly drops **UDP Floods** and **Illegal TCP Packets** (e.g., Null Scan, SYN+FIN).
+*   🚀 **Performance**: Drop malicious packets at driver level, saving CPU.
 
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/undead-undead/x-ui-lite/feature/xdp-integration/install.sh)
-```
+> **Requirements for XDP**: Linux Kernel ≥ 5.4, Root Privileges.
+> **XDP is automatically enabled** if supported kernel is detected and XDP version is selected.
 
 ---
 
