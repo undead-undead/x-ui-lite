@@ -110,7 +110,7 @@ XRAY_BIN_PATH="$INSTALL_PATH/bin/xray"
 ENV_FILE="$INSTALL_PATH/.env"
 SERVICE_FILE="/etc/systemd/system/x-ui.service"
 
-RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.8.7/x-ui-linux-${arch}.tar.gz"
+RELEASE_URL="https://github.com/undead-undead/x-ui-lite/releases/download/v2.9.1/x-ui-linux-${arch}.tar.gz"
 
 # Spinner animation for long-running tasks
 spinner() {
@@ -203,7 +203,24 @@ install_xray() {
         xray_msg="Installing xray-lite..."
     fi
     
-    # Download xray-lite from x-ui-lite release
+    # Kernel Check for XDP
+    local kernel_version=$(uname -r)
+    local kernel_major=$(echo $kernel_version | cut -d. -f1)
+    local kernel_minor=$(echo $kernel_version | cut -d. -f2)
+    local support_xdp=false
+
+    # Simple version check for >= 5.4
+    if [[ "$kernel_major" -gt 5 ]]; then
+        support_xdp=true
+    elif [[ "$kernel_major" -eq 5 && "$kernel_minor" -ge 4 ]]; then
+        support_xdp=true
+    fi
+
+    # Limit XDP to x86_64
+    if [[ "$arch" != "amd64" && "$arch" != "x86_64" ]]; then
+        support_xdp=false
+    fi
+
     local xray_lite_arch=""
     if [[ $arch == "amd64" ]]; then
         xray_lite_arch="x86_64"
@@ -211,8 +228,44 @@ install_xray() {
         xray_lite_arch="aarch64"
     fi
     
-    local xray_lite_file="vless-server-linux-${xray_lite_arch}"
-    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.4.6/${xray_lite_file}"
+    # Updated to match the single static binary name in release
+    local xray_lite_file="xray-linux-amd64"
+    if [[ "$support_xdp" == "true" ]]; then
+    #     xray_lite_file="${xray_lite_file}-xdp"
+        echo -e "${green}Detected High-Performance Kernel: ${kernel_version}${plain}"
+        echo -e "${green}Installing XDP-Enhanced Version / 安装 XDP 增强版${plain}"
+        
+        # Write config to .env for Panel to pick up
+        # Ensure ENV_FILE directory exists (though install_x_ui should have created it, but just in case)
+        mkdir -p $(dirname $ENV_FILE)
+        echo "XRAY_XDP_ENABLE=true" >> $ENV_FILE
+        local def_iface=$(ip route get 8.8.8.8 | grep -oP 'dev \K\S+')
+        echo "XRAY_XDP_IFACE=${def_iface:-eth0}" >> $ENV_FILE
+    else
+        echo -e "${yellow}Standard Kernel Detected: ${kernel_version}${plain}"
+        echo -e "${yellow}Installing Standard Version / 安装标准版${plain}"
+    fi
+
+    # Check for io_uring support (Kernel >= 5.10)
+    local support_uring=false
+    if [[ "$kernel_major" -gt 5 ]]; then
+        support_uring=true
+    elif [[ "$kernel_major" -eq 5 && "$kernel_minor" -ge 10 ]]; then
+        support_uring=true
+    fi
+
+    local enable_uring="n"
+    if [[ "$support_uring" == "true" ]]; then
+        echo -e ""
+        echo -e "${yellow}Kernel 5.10+ detected, io_uring optimization available (High Performance)${plain}"
+        echo -e "${yellow}检测到内核 5.10+，可用 io_uring 性能优化 (高性能)${plain}"
+        read -p "Enable io_uring? / 启用 io_uring? (y/N): " uring_choice
+        if [[ "$uring_choice" == "y" || "$uring_choice" == "Y" ]]; then
+            enable_uring="y"
+        fi
+    fi
+
+    local xray_lite_url="https://github.com/undead-undead/xray-lite/releases/download/v0.6.0-beta1/${xray_lite_file}"
     
     # Try downloading xray-lite (with spinner)
     (wget -N --no-check-certificate -q -O /tmp/vless-server $xray_lite_url 2>/dev/null) &
@@ -227,6 +280,33 @@ install_xray() {
     # Install the vless-server binary
     mv /tmp/vless-server $XRAY_BIN_PATH
     chmod +x $XRAY_BIN_PATH
+
+    # If XDP is enabled, create a wrapper script to pass arguments
+    # If XDP or io_uring is enabled, create a wrapper script to pass arguments
+    if [[ "$support_xdp" == "true" || "$enable_uring" == "y" ]]; then
+        echo -e "${green}Creating Xray Wrapper Script...${plain}"
+        local real_bin="${XRAY_BIN_PATH}.real"
+        mv $XRAY_BIN_PATH $real_bin
+        
+        # Get interface again to be safe
+        local def_iface=$(ip route get 8.8.8.8 | grep -oP 'dev \K\S+')
+        local iface="${def_iface:-eth0}"
+        
+        local extra_args=""
+        if [[ "$support_xdp" == "true" ]]; then
+            extra_args="$extra_args --enable-xdp --xdp-iface $iface"
+        fi
+        if [[ "$enable_uring" == "y" ]]; then
+            extra_args="$extra_args --uring"
+        fi
+
+        cat > $XRAY_BIN_PATH <<EOF
+#!/bin/bash
+exec $real_bin "\$@" $extra_args
+EOF
+        chmod +x $XRAY_BIN_PATH
+        echo -e "${green}✓ Wrapper created (XDP: $support_xdp, io_uring: $enable_uring)${plain}"
+    fi
 }
 
 install_x_ui() {
@@ -324,10 +404,25 @@ install_x_ui() {
     echo -e "${green}Web Root configured as: $web_root${plain}"
     
     # Generate/Update .env
-    if [[ ! -f $ENV_FILE ]]; then
-        # New file
-        local jwt_secret=$(cat /proc/sys/kernel/random/uuid)
-        cat > $ENV_FILE <<EOF
+    # Generate/Update .env
+    # Preserve existing secrets and XDP settings (including those just added by install_xray)
+    local jwt_secret=$(cat /proc/sys/kernel/random/uuid)
+    local xdp_enable="false"
+    local xdp_iface="eth0"
+    
+    if [[ -f $ENV_FILE ]]; then
+        local old_secret=$(grep "JWT_SECRET" $ENV_FILE | cut -d '=' -f2)
+        [[ ! -z $old_secret ]] && jwt_secret=$old_secret
+        
+        if grep -q "XRAY_XDP_ENABLE=true" $ENV_FILE; then
+             xdp_enable="true"
+             local old_iface=$(grep "XRAY_XDP_IFACE" $ENV_FILE | cut -d '=' -f2)
+             [[ ! -z $old_iface ]] && xdp_iface=$old_iface
+        fi
+    fi
+
+    # Rewrite .env completely to ensure new port/root settings are applied
+    cat > $ENV_FILE <<EOF
 DATABASE_URL=sqlite://$INSTALL_PATH/data/x-ui.db
 JWT_SECRET=$jwt_secret
 JWT_EXPIRATION_HOURS=24
@@ -338,14 +433,9 @@ XRAY_CONFIG_PATH=$INSTALL_PATH/data/xray.json
 WEB_ROOT=$web_root
 WEB_DIST_PATH=$INSTALL_PATH/bin/dist
 RUST_LOG=info
+XRAY_XDP_ENABLE=$xdp_enable
+XRAY_XDP_IFACE=$xdp_iface
 EOF
-    else
-        # Update existing
-        update_env "SERVER_PORT" "$port"
-        update_env "WEB_ROOT" "$web_root"
-        update_env "XRAY_BIN_PATH" "$XRAY_BIN_PATH"
-        update_env "WEB_DIST_PATH" "$INSTALL_PATH/bin/dist"
-    fi
 
     # Create Service
     cat > $SERVICE_FILE <<EOF
