@@ -2,7 +2,7 @@
 
 A high-performance, minimalist X-UI panel powered by **xray-lite**.
 
-[One-Click Install](#installation) | [Features](#features) | [Supporting Project](#sponsorship)
+[Features](#features) | [Supporting Project](#sponsorship)
 
 ---
 
