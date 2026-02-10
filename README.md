@@ -1,29 +1,20 @@
-# X-UI-Lite 🚀
+# X-UI-Lite
 
 A high-performance, minimalist X-UI panel powered by **xray-lite**.
 
-<div align="center">
-
-[![Build and Release](https://github.com/undead-undead/x-ui-lite/actions/workflows/release.yml/badge.svg)](https://github.com/undead-undead/x-ui-lite/actions/workflows/release.yml)
-![Memory](https://img.shields.io/badge/RAM-%3C%2020MB-green)
-![Bilingual](https://img.shields.io/badge/Language-ZH/EN-blue)
-
-[**One-Click Install**](#-installation) | [**Features**](#-features) | [**Supporting Project**](#-sponsorship)
-
-</div>
+[One-Click Install](#installation) | [Features](#features) | [Supporting Project](#sponsorship)
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
-### 📋 Installation / 安装
+### Installation / 安装
 
 > **Current Version: v2.9.8**
 >
 > **Included Kernels (Switchable in Panel):**
 > - **Stable**: v0.4.6 (Tokio) - Recommended for production
 > - **XDP Firewall**: v0.6.0-xdp - Anti-DDoS/Flood protection (Kernel 5.4+)
-> - **High Performance**: v0.6.0-beta1 - io_uring optimized (Kernel 5.10+)
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/undead-undead/x-ui-lite/main/install.sh)
@@ -33,22 +24,22 @@ bash <(curl -fsSL https://raw.githubusercontent.com/undead-undead/x-ui-lite/main
 >
 > **注意**：
 > - 脚本默认安装**稳定版**内核。
-> - 如需 **XDP 防火墙**或 **io_uring 高性能**模式，请在面板的【系统状态】->【切换版本】中选择对应版本。
+> - 如需 **XDP 防火墙**模式，请在面板的【系统状态】->【切换版本】中选择对应版本。
 
-### 🔥 XDP Firewall (Optional) / XDP 防火墙（可选）
+### XDP Firewall (Optional) / XDP 防火墙（可选）
 
 If you switch to **v0.6.0-xdp** in the panel:
 
-*   🛡️ **XDP Firewall**: Kernel-level protection against **UDP Floods**, **TCP SYN Floods (Rate Limit)** & **Illegal Flags**.
-*   🛑 **Anti-Probe**: Instantly drops **UDP Floods** and **Illegal TCP Packets** (e.g., Null Scan, SYN+FIN).
-*   🚀 **Performance**: Drop malicious packets at driver level, saving CPU.
+*   **XDP Firewall**: Kernel-level protection against **UDP Floods**, **TCP SYN Floods (Rate Limit)** & **Illegal Flags**.
+*   **Anti-Probe**: Instantly drops **UDP Floods** and **Illegal TCP Packets** (e.g., Null Scan, SYN+FIN).
+*   **Performance**: Drop malicious packets at driver level, saving CPU.
 
 > **Requirements for XDP**: Linux Kernel ≥ 5.4, Root Privileges.
 > **XDP is automatically enabled** if supported kernel is detected and XDP version is selected.
 
 ---
 
-## ✨ Features
+## Features
 
 - **Ultra High Performance**: Powered by **xray-lite**, a pure Rust implementation of VLESS+Reality.
   - Backend: Rust (Axum + SQLx) - ~13.1MB RAM
@@ -59,12 +50,12 @@ If you switch to **v0.6.0-xdp** in the panel:
 - **Universal XHTTP**: One-click XHTTP deployment with 100% compatibility for PC and iOS.
 - **Reality Validation**: Built-in Reality target domain reachability check to ensure connectivity.
 - **BBR Support**: One-click BBR enablement.
-- 🔥 **XDP Firewall**: Kernel-level protection against **UDP Floods**, **TCP SYN Floods (Rate Limiting)** & **Illegal Packets**.
+- **XDP Firewall**: Kernel-level protection against **UDP Floods**, **TCP SYN Floods (Rate Limiting)** & **Illegal Packets**.
 - **Built-in Management**: Simple `x-ui` command to manage your panel from the terminal.
 
 ---
 
-## 🔧 Technical Stack
+## Technical Stack
 
 - **Backend**: Rust (Axum framework) + SQLite (SQLx)
 - **Frontend**: React + TypeScript + Vite
@@ -73,14 +64,14 @@ If you switch to **v0.6.0-xdp** in the panel:
 ### Why xray-lite UAE? (Universal Adaptive Engine)
 
 The core has been upgraded with the **Universal Adaptive Engine**:
-- 🛡️ **Zero-Config Adaptation**: Automatically detects client type. Same configuration works for **PC (Xray-core)** and **Mobile (Shadowrocket/Stash)**.
-- 📱 **Mobile Split-Stream**: Industry-leading XHTTP session pairing for 100% stability on iOS.
-- 🕵️ **Silent Dynamic Padding**: Transparent randomized HTTP/2 header padding (64-512 bytes) to defeat GFW/DPI.
-- 🚀 **Pure Rust Efficiency**: No Go runtime, zero GC overhead, sub-10MB memory usage.
+- **Zero-Config Adaptation**: Automatically detects client type. Same configuration works for **PC (Xray-core)** and **Mobile (Shadowrocket/Stash)**.
+- **Mobile Split-Stream**: Industry-leading XHTTP session pairing for 100% stability on iOS.
+- **Silent Dynamic Padding**: Transparent randomized HTTP/2 header padding (64-512 bytes) to defeat GFW/DPI.
+- **Pure Rust Efficiency**: No Go runtime, zero GC overhead, sub-10MB memory usage.
 
 ---
 
-## ☕ Sponsorship
+## Sponsorship
 
 If you think the project is good, you can support the developers.
 
@@ -91,9 +82,10 @@ crypto:
 Sol: 9QFKQ3jpBSuNPLZQH1uq5GrJm4RDKue82zeVaXwazcmj
 
 Base：0x4cf0b79aea1c229dfb1df9e2b40ea5dd04f37969
+
 ---
 
-## 📜 License
+## License
 
 This project is licensed under the **MIT License with Additional Terms**.
 
@@ -103,10 +95,10 @@ You are free to use, modify, and distribute this software.
 ### For Fork Creators
 If you fork or redistribute this project, you **MUST**:
 
-1. ✅ **Keep original sponsor links intact** - Do not remove or replace the "☕ 赞助项目" button or any sponsor links
-2. ✅ **Clearly indicate it's a fork** - State that your version is derived from [x-ui-lite](https://github.com/undead-undead/x-ui-lite)
-3. ✅ **Credit the original author** - Maintain attribution in README and UI
-4. ✅ **No misrepresentation** - Do not claim your fork is the official version
+1. **Keep original sponsor links intact** - Do not remove or replace the sponsorship button or any sponsor links
+2. **Clearly indicate it's a fork** - State that your version is derived from [x-ui-lite](https://github.com/undead-undead/x-ui-lite)
+3. **Credit the original author** - Maintain attribution in README and UI
+4. **No misrepresentation** - Do not claim your fork is the official version
 
 You may add your own sponsor links **alongside** the original ones, but **cannot remove** the original.
 
