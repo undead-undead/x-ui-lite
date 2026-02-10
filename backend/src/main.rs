@@ -323,7 +323,8 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Server listening on http://{}", addr);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     tracing::info!(
-        "🚀 X-UI-Lite Backend v2.5.10 [Powered by xray-lite v0.2.78]"
+        "🚀 X-UI-Lite Backend v{} [Powered by xray-lite]",
+        env!("CARGO_PKG_VERSION")
     );
     tracing::info!(
         "X-UI Backend listening on http://{}",
