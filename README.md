@@ -18,7 +18,7 @@ A high-performance, minimalist X-UI panel powered by **xray-lite**.
 
 ### 📋 Installation / 安装
 
-> **Current Version: v2.9.2**
+> **Current Version: v2.9.8**
 >
 > **Included Kernels (Switchable in Panel):**
 > - **Stable**: v0.4.6 (Tokio) - Recommended for production
@@ -82,12 +82,15 @@ The core has been upgraded with the **Universal Adaptive Engine**:
 
 ## ☕ Sponsorship
 
-If you like this project, you can buy me a coffee to support the development!
+If you think the project is good, you can support the developers.
 
-<a href="https://buymeacoffee.com/undeadundead" target="_blank">
-  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" >
-</a>
-sol:GJu2g8nd5pQMCdPj1uBJ2bdDguSTMXU6uqXmUbYPS9x base:0xBC14Ef78a454b4D52A1b0605b707b85Eb9A6b9A1 btc:162vtnicREByPgxh6KLbp2tknXuFCQDHMC sui:0xd6d896a0ab9ec220c32b17ebc3f641a3a1d7fa140c3c03d9307797704132dc78
+https://buymeacoffee.com/undeadundead
+
+crypto:
+
+Sol: 9QFKQ3jpBSuNPLZQH1uq5GrJm4RDKue82zeVaXwazcmj
+
+Base：0x4cf0b79aea1c229dfb1df9e2b40ea5dd04f37969
 ---
 
 ## 📜 License
