@@ -61,16 +61,6 @@ If you switch to **v0.6.0-xdp** in the panel:
 - **Frontend**: React + TypeScript + Vite
 - **Core**: [xray-lite](https://github.com/undead-undead/xray-lite) - Pure Rust VLESS+Reality+XHTTP implementation
 
-### Why xray-lite UAE? (Universal Adaptive Engine)
-
-The core has been upgraded with the **Universal Adaptive Engine**:
-- **Zero-Config Adaptation**: Automatically detects client type. Same configuration works for **PC (Xray-core)** and **Mobile (Shadowrocket/Stash)**.
-- **Mobile Split-Stream**: Industry-leading XHTTP session pairing for 100% stability on iOS.
-- **Silent Dynamic Padding**: Transparent randomized HTTP/2 header padding (64-512 bytes) to defeat GFW/DPI.
-- **Pure Rust Efficiency**: No Go runtime, zero GC overhead, sub-10MB memory usage.
-
----
-
 ## Sponsorship
 
 If you think the project is good, you can support the developers.
