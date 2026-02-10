@@ -48,7 +48,6 @@ If you switch to **v0.6.0-xdp** in the panel:
   - Total system footprint: ~18.8MB RAM
 - **Bilingual Support**: Complete Chinese (Simplified) and English support for both Installer and Web UI.
 - **Secure**: Built-in JWT authentication with token freshness validation.
-- **Universal XHTTP**: One-click XHTTP deployment with 100% compatibility for PC and iOS.
 - **Reality Validation**: Built-in Reality target domain reachability check to ensure connectivity.
 - **BBR Support**: One-click BBR enablement.
 - **XDP Firewall**: Kernel-level protection against **UDP Floods**, **TCP SYN Floods (Rate Limiting)** & **Illegal Packets**.
