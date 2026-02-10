@@ -32,6 +32,7 @@ If you switch to **v0.6.0-xdp** in the panel:
 
 *   **XDP Firewall**: Kernel-level protection against **UDP Floods**, **TCP SYN Floods (Rate Limit)** & **Illegal Flags**.
 *   **Anti-Probe**: Instantly drops **UDP Floods** and **Illegal TCP Packets** (e.g., Null Scan, SYN+FIN).
+*   **Adaptive Egress Pacing (TC eBPF)**: Microsecond-precision traffic smoothing to eliminate proxy-burst timing fingerprints.
 *   **Performance**: Drop malicious packets at driver level, saving CPU.
 
 > **Requirements for XDP**: Linux Kernel ≥ 5.4, Root Privileges.
